@@ -5,13 +5,13 @@ import { motion } from 'framer-motion';
 import EnrollmentForm from './EnrollmentForm';
 
 // Initialize with your Public Key
-initMercadoPago('APP_USR-6322cdfa-2f10-4238-b206-b04599c35109', { locale: 'es-MX' });
+initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY, { locale: 'es-MX' });
 
 const Pricing = () => {
     // These IDs should come from your Mercado Pago Dashboard
     const preferenceIds = {
-        module1: '3102488590-c69c1329-227c-40ae-88e4-f95042c980a0',
-        fullCourse: '3102488590-3d63d0b5-2bed-448d-be3c-750eb6da3540'
+        module1: import.meta.env.VITE_MP_PREFERENCE_ID_MODULE1,
+        fullCourse: import.meta.env.VITE_MP_PREFERENCE_ID_FULLCOURSE
     };
 
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -24,7 +24,7 @@ const Pricing = () => {
 
     const handleWhatsAppLink = (plan) => {
         const message = encodeURIComponent(`Hola, estoy interesado en el plan "${plan}" y me gustaría recibir el link de pago.`);
-        window.open(`https://wa.me/521234567890?text=${message}`, '_blank');
+        window.open(`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER}?text=${message}`, '_blank');
     };
 
     return (

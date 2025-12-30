@@ -9,7 +9,7 @@ const ChatWidget = () => {
 
     const handleRedirect = () => {
         // Redirection to WhatsApp
-        window.open('https://wa.me/521234567890?text=Hola,%20me%20interesa%20el%20curso%20Full%20Stack.', '_blank');
+        window.open(`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER}?text=Hola,%20me%20interesa%20el%20curso%20Full%20Stack.`, '_blank');
         setIsOpen(false);
     };
 
