@@ -1,0 +1,190 @@
+{
+  "name": "Mercado Pago → Supabase Payment Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mercadopago-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "6e34830e-5a08-491b-bb2d-9ed5138b4f43",
+      "name": "Webhook MP",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-144, -64],
+      "webhookId": "mercadopago-payments"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"received\": true }",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-webhook",
+      "name": "Responder 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-payment-type",
+              "leftValue": "={{ $json.body.type }}",
+              "rightValue": "payment",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-payment",
+      "name": "¿Es tipo payment?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.mercadopago.com/v1/payments/{{ $json.body.data.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer APP_USR-6406661833643129-123014-559a4ac43d37b84a565e916c1c890131-709785790"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-payment-details",
+      "name": "GET Payment Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-approved",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-approved",
+      "name": "¿Pago aprobado?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://iuuyvsrwncdslmsryazz.supabase.co/rest/v1/enrollments?id=eq.{{ $json.external_reference }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1dXl2c3J3bmNkc2xtc3J5YXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MjEwMTUsImV4cCI6MjA1MTA5NzAxNX0.p_4SaBe3XlGo-93oWBNfrGbIr0_4gNpULyAiCN07q5Q"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1dXl2c3J3bmNkc2xtc3J5YXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MjEwMTUsImV4cCI6MjA1MTA5NzAxNX0.p_4SaBe3XlGo-93oWBNfrGbIr0_4gNpULyAiCN07q5Q"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"payment_status\": \"approved\",\n  \"payment_id\": \"{{ $json.id }}\",\n  \"payment_date\": \"{{ $json.date_approved }}\",\n  \"payment_amount\": {{ $json.transaction_amount }},\n  \"updated_at\": \"{{ $now.toISO() }}\"\n}",
+        "options": {}
+      },
+      "id": "update-supabase",
+      "name": "Update Enrollment (Supabase)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 300]
+    }
+  ],
+  "connections": {
+    "Webhook MP": {
+      "main": [
+        [
+          { "node": "Responder 200 OK", "type": "main", "index": 0 },
+          { "node": "¿Es tipo payment?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "¿Es tipo payment?": {
+      "main": [
+        [
+          { "node": "GET Payment Details", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "GET Payment Details": {
+      "main": [
+        [
+          { "node": "¿Pago aprobado?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "¿Pago aprobado?": {
+      "main": [
+        [
+          { "node": "Update Enrollment (Supabase)", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "ready-to-import"
+  },
+  "tags": []
+}

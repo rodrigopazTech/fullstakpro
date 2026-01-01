@@ -1,0 +1,267 @@
+{
+  "name": "Mercado Pago → Supabase Payment Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mercadopago-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook MP",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "mercadopago-payments"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"received\": true }",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-webhook",
+      "name": "Responder 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-payment-type",
+              "leftValue": "={{ $json.body.type }}",
+              "rightValue": "payment",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-payment",
+      "name": "¿Es notificación de pago?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.mercadopago.com/v1/payments/{{ $json.body.data.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer APP_USR-6406661833643129-123014-559a4ac43d37b84a565e916c1c890131-709785790"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-payment-details",
+      "name": "Obtener Detalles del Pago",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-approved",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-approved",
+      "name": "¿Pago Aprobado?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "enrollments",
+        "filterType": "string",
+        "filterString": "=id=eq.{{ $json.external_reference }}",
+        "dataMode": "defineBelow",
+        "valuesToSend": {
+          "values": [
+            {
+              "column": "status",
+              "fieldValue": "paid"
+            },
+            {
+              "column": "payment_id",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "column": "payment_date",
+              "fieldValue": "={{ $now.toISO() }}"
+            },
+            {
+              "column": "payment_method",
+              "fieldValue": "={{ $json.payment_method_id }}"
+            },
+            {
+              "column": "payment_status",
+              "fieldValue": "={{ $json.status }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-supabase",
+      "name": "Actualizar Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 300],
+      "parameters_note": "IMPORTANTE: En n8n, configura las credenciales de Supabase con URL: https://iuuyvsrwncdslmsryazz.supabase.co y tu Service Role Key"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "set-success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "set-enrollment-id",
+              "name": "enrollment_id",
+              "value": "={{ $('Obtener Detalles del Pago').item.json.external_reference }}",
+              "type": "string"
+            },
+            {
+              "id": "set-payment-id",
+              "name": "payment_id",
+              "value": "={{ $('Obtener Detalles del Pago').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "set-amount",
+              "name": "amount",
+              "value": "={{ $('Obtener Detalles del Pago').item.json.transaction_amount }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-result",
+      "name": "Preparar Resultado",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1450, 300]
+    }
+  ],
+  "connections": {
+    "Webhook MP": {
+      "main": [
+        [
+          {
+            "node": "Responder 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder 200 OK": {
+      "main": [
+        [
+          {
+            "node": "¿Es notificación de pago?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Es notificación de pago?": {
+      "main": [
+        [
+          {
+            "node": "Obtener Detalles del Pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Detalles del Pago": {
+      "main": [
+        [
+          {
+            "node": "¿Pago Aprobado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Pago Aprobado?": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Supabase": {
+      "main": [
+        [
+          {
+            "node": "Preparar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "versionId": "1"
+}

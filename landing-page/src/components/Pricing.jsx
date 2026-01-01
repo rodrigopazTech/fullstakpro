@@ -5,20 +5,14 @@ import { motion } from 'framer-motion';
 import EnrollmentForm from './EnrollmentForm';
 
 // Initialize with your Public Key
-initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY, { locale: 'es-MX' });
+initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY || 'APP_USR-6322cdfa-2f10-4238-b206-b04599c35109', { locale: 'es-MX' });
 
 const Pricing = () => {
-    // These IDs should come from your Mercado Pago Dashboard
-    const preferenceIds = {
-        module1: import.meta.env.VITE_MP_PREFERENCE_ID_MODULE1,
-        fullCourse: import.meta.env.VITE_MP_PREFERENCE_ID_FULLCOURSE
-    };
-
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [selectedPlan, setSelectedPlan] = useState({ name: '', price: 0, preferenceId: '' });
+    const [selectedPlan, setSelectedPlan] = useState({ name: '', price: 0 });
 
-    const handleOpenForm = (name, price, preferenceId) => {
-        setSelectedPlan({ name, price, preferenceId });
+    const handleOpenForm = (name, price) => {
+        setSelectedPlan({ name, price });
         setIsFormOpen(true);
     };
 
@@ -67,7 +61,7 @@ const Pricing = () => {
 
                         <div className="space-y-4">
                             <button
-                                onClick={() => handleOpenForm("Módulo 1", 399, preferenceIds.module1)}
+                                onClick={() => handleOpenForm("Módulo 1", 399)}
                                 className="w-full py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-lg shadow-lg shadow-primary-500/25 transition-all hover:scale-105"
                             >
                                 Inscribirme Ahora
@@ -112,7 +106,7 @@ const Pricing = () => {
 
                         <div className="space-y-4">
                             <button
-                                onClick={() => handleOpenForm("Curso Completo", 1800, preferenceIds.fullCourse)}
+                                onClick={() => handleOpenForm("Curso Completo", 1800)}
                                 className="w-full py-4 bg-white hover:bg-slate-200 text-slate-900 rounded-xl font-bold text-lg shadow-lg transition-all hover:scale-105"
                             >
                                 Inscribirme Ahora
@@ -134,7 +128,6 @@ const Pricing = () => {
                     onClose={() => setIsFormOpen(false)}
                     plan={selectedPlan.name}
                     price={selectedPlan.price}
-                    preferenceId={selectedPlan.preferenceId}
                 />
 
                 <div className="mt-12 flex justify-center gap-8 text-slate-500 grayscale opacity-60">
@@ -146,6 +139,16 @@ const Pricing = () => {
                         <ShieldCheck className="w-5 h-5" />
                         <span className="text-sm font-medium">Garantía de Satisfacción</span>
                     </div>
+                </div>
+
+                {/* TEMPORARY TEST BUTTON */}
+                <div className="mt-8 flex justify-center">
+                    <button
+                        onClick={() => handleOpenForm("Producto de Prueba", 20)}
+                        className="px-6 py-2 bg-yellow-500/20 text-yellow-500 border border-yellow-500/50 rounded-lg text-sm font-bold hover:bg-yellow-500/30 transition-colors"
+                    >
+                        [TEST] Pagar $20 MXN (Preferencia Dinámica)
+                    </button>
                 </div>
 
                 <p className="text-center text-xs text-slate-600 mt-8">

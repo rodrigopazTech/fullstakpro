@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, CheckCircle } from 'lucide-react';
+import { X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { Wallet } from '@mercadopago/sdk-react';
 
-const EnrollmentForm = ({ isOpen, onClose, plan, price, preferenceId }) => {
-    const [step, setStep] = useState('form'); // form, payment
+const EnrollmentForm = ({ isOpen, onClose, plan, price }) => {
+    const [step, setStep] = useState('form'); // form, creating_preference, payment, error
     const [loading, setLoading] = useState(false);
+    const [preferenceId, setPreferenceId] = useState(null);
+    const [enrollmentId, setEnrollmentId] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -14,6 +16,22 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price, preferenceId }) => {
         age: '',
     });
     const [error, setError] = useState('');
+
+    // URL de la Edge Function de Supabase
+    const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-preference`;
+
+    const resetForm = () => {
+        setStep('form');
+        setPreferenceId(null);
+        setEnrollmentId(null);
+        setError('');
+        setFormData({ name: '', email: '', phone: '', age: '' });
+    };
+
+    const handleClose = () => {
+        resetForm();
+        onClose();
+    };
 
     if (!isOpen) return null;
 
@@ -23,8 +41,8 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price, preferenceId }) => {
         setError('');
 
         try {
-            // Guardar en Supabase
-            const { data, error } = await supabase
+            // PASO 1: Guardar en Supabase y obtener el ID
+            const { data: enrollmentData, error: insertError } = await supabase
                 .from('enrollments')
                 .insert([
                     {
@@ -35,25 +53,63 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price, preferenceId }) => {
                         course_plan: plan,
                         price: price,
                         status: 'pending_payment',
-                        created_at: new Date()
+                        created_at: new Date().toISOString()
                     }
                 ])
-                .select();
+                .select()
+                .single();
 
-            if (error) throw error;
+            if (insertError) {
+                console.error('Error guardando enrollment:', insertError);
+                throw new Error('No se pudieron guardar tus datos. Intenta de nuevo.');
+            }
 
-            // Si se guarda correctamente, pasar al paso de pago
+            const newEnrollmentId = enrollmentData.id;
+            setEnrollmentId(newEnrollmentId);
+            console.log('Enrollment creado con ID:', newEnrollmentId);
+
+            // PASO 2: Crear preferencia dinámica en Mercado Pago
+            setStep('creating_preference');
+
+            const response = await fetch(EDGE_FUNCTION_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+                },
+                body: JSON.stringify({
+                    enrollment_id: newEnrollmentId,
+                    title: plan,
+                    price: price,
+                    email: formData.email,
+                    payer_name: formData.name
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Error creando preferencia:', errorData);
+                throw new Error(errorData.error || 'Error al crear la preferencia de pago');
+            }
+
+            const { preference_id } = await response.json();
+            console.log('Preferencia creada:', preference_id);
+
+            setPreferenceId(preference_id);
             setStep('payment');
+
         } catch (err) {
-            console.error('Error saving enrollment:', err);
-            // Fallback para demo
-            console.warn("Supabase falló, pasando a pago modo DEMO");
-            setStep('payment');
-
-            // setError('Hubo un error al guardar tus datos. Por favor intenta de nuevo.');
+            console.error('Error en el proceso:', err);
+            setError(err.message || 'Hubo un error. Por favor intenta de nuevo.');
+            setStep('error');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleRetry = () => {
+        setStep('form');
+        setError('');
     };
 
     return (
@@ -62,7 +118,7 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price, preferenceId }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={onClose}
+                onClick={handleClose}
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
 
@@ -78,14 +134,15 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price, preferenceId }) => {
                         <h3 className="text-xl font-bold text-white">Inscripción</h3>
                         <p className="text-sm text-slate-400">{plan} - <span className="text-primary-400 font-bold">${price} MXN</span></p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white">
+                    <button onClick={handleClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 <div className="p-6">
                     <AnimatePresence mode="wait">
-                        {step === 'form' ? (
+                        {/* PASO 1: Formulario */}
+                        {step === 'form' && (
                             <motion.form
                                 key="form"
                                 initial={{ opacity: 0, x: -20 }}
@@ -154,7 +211,25 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price, preferenceId }) => {
                                     Tus datos están seguros. Al continuar, procederás al pago seguro con Mercado Pago.
                                 </p>
                             </motion.form>
-                        ) : (
+                        )}
+
+                        {/* PASO 2: Creando preferencia */}
+                        {step === 'creating_preference' && (
+                            <motion.div
+                                key="creating"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="text-center py-8"
+                            >
+                                <Loader2 className="w-12 h-12 text-primary-500 animate-spin mx-auto mb-4" />
+                                <p className="text-white font-medium">Preparando tu pago...</p>
+                                <p className="text-slate-400 text-sm mt-2">Esto solo tomará un momento</p>
+                            </motion.div>
+                        )}
+
+                        {/* PASO 3: Mostrar Wallet para pago */}
+                        {step === 'payment' && preferenceId && (
                             <motion.div
                                 key="payment"
                                 initial={{ opacity: 0, x: 20 }}
@@ -172,14 +247,46 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price, preferenceId }) => {
                                 </div>
 
                                 <div className="bg-white p-4 rounded-xl">
-                                    {/* Contenedor ajustado para evitar overflow */}
                                     <div className="custom-wallet-container min-h-[50px]">
-                                        <Wallet initialization={{ preferenceId: preferenceId, redirectMode: 'self' }} customization={{ texts: { valueProp: 'security_safety' } }} />
+                                        <Wallet 
+                                            initialization={{ preferenceId: preferenceId, redirectMode: 'self' }} 
+                                            customization={{ texts: { valueProp: 'security_safety' } }} 
+                                        />
                                     </div>
                                 </div>
 
+                                <p className="text-xs text-slate-500">
+                                    ID de inscripción: <code className="bg-slate-800 px-2 py-1 rounded">{enrollmentId}</code>
+                                </p>
+
                                 <button onClick={() => setStep('form')} className="text-sm text-slate-500 hover:text-white underline">
                                     Volver a editar datos
+                                </button>
+                            </motion.div>
+                        )}
+
+                        {/* PASO ERROR */}
+                        {step === 'error' && (
+                            <motion.div
+                                key="error"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="text-center space-y-6 py-4"
+                            >
+                                <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto">
+                                    <AlertCircle className="w-8 h-8 text-red-400" />
+                                </div>
+                                <div>
+                                    <h4 className="text-xl font-bold text-white mb-2">Ocurrió un error</h4>
+                                    <p className="text-slate-400 text-sm">{error}</p>
+                                </div>
+
+                                <button
+                                    onClick={handleRetry}
+                                    className="w-full bg-primary-600 hover:bg-primary-500 text-white font-bold py-4 rounded-xl transition-all"
+                                >
+                                    Intentar de nuevo
                                 </button>
                             </motion.div>
                         )}
