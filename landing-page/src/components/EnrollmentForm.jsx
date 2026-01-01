@@ -13,6 +13,7 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price }) => {
         name: '',
         email: '',
         phone: '',
+        countryCode: '52',
         age: '',
     });
     const [error, setError] = useState('');
@@ -25,7 +26,7 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price }) => {
         setPreferenceId(null);
         setEnrollmentId(null);
         setError('');
-        setFormData({ name: '', email: '', phone: '', age: '' });
+        setFormData({ name: '', email: '', phone: '', countryCode: '52', age: '' });
     };
 
     const handleClose = () => {
@@ -48,7 +49,7 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price }) => {
                     {
                         full_name: formData.name,
                         email: formData.email,
-                        phone: formData.phone,
+                        phone: `${formData.countryCode}${formData.phone.replace(/\D/g, '')}`,  // Guarda con código de país, solo números
                         age: parseInt(formData.age),
                         course_plan: plan,
                         price: price,
@@ -175,14 +176,33 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price }) => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-400 mb-1">Teléfono (WhatsApp)</label>
-                                    <input
-                                        type="tel"
-                                        required
-                                        className="w-full bg-[#0B0F19] border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary-500 transition-colors"
-                                        placeholder="+52 123 456 7890"
-                                        value={formData.phone}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                    />
+                                    <div className="flex gap-2">
+                                        <select
+                                            value={formData.countryCode}
+                                            onChange={e => setFormData({ ...formData, countryCode: e.target.value })}
+                                            className="bg-[#0B0F19] border border-slate-700 rounded-lg px-3 py-3 text-white focus:outline-none focus:border-primary-500 transition-colors w-28"
+                                        >
+                                            <option value="52">🇲🇽 +52</option>
+                                            <option value="1">🇺🇸 +1</option>
+                                            <option value="54">🇦🇷 +54</option>
+                                            <option value="55">🇧🇷 +55</option>
+                                            <option value="56">🇨🇱 +56</option>
+                                            <option value="57">🇨🇴 +57</option>
+                                            <option value="51">🇵🇪 +51</option>
+                                            <option value="58">🇻🇪 +58</option>
+                                            <option value="593">🇪🇨 +593</option>
+                                            <option value="34">🇪🇸 +34</option>
+                                        </select>
+                                        <input
+                                            type="tel"
+                                            required
+                                            className="flex-1 bg-[#0B0F19] border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary-500 transition-colors"
+                                            placeholder="10 dígitos sin espacios"
+                                            value={formData.phone}
+                                            onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-1">Recibirás confirmación por WhatsApp</p>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-400 mb-1">Edad</label>
