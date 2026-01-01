@@ -1,0 +1,327 @@
+{
+  "name": "Chatbot Web - Landing Page con RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbot-web",
+        "options": {
+          "responseMode": "responseNode"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-400, 0],
+      "id": "webhook-web",
+      "name": "Webhook Chat Web",
+      "webhookId": "chatbot-web"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-message",
+              "leftValue": "={{ $json.body.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-160, 0],
+      "id": "validate-message",
+      "name": "Validar Mensaje"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"error\": \"No message provided\",\n  \"response\": \"Por favor envía un mensaje.\"\n}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-40, -160],
+      "id": "respond-error",
+      "name": "Error: Sin Mensaje"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "session",
+              "name": "session_id",
+              "value": "={{ $json.body.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "name",
+              "name": "nombre",
+              "value": "={{ $json.body.user?.name || 'Usuario' }}",
+              "type": "string"
+            },
+            {
+              "id": "phone",
+              "name": "telefono",
+              "value": "={{ $json.body.user?.phone || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "name": "mensaje",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "source",
+              "name": "fuente",
+              "value": "={{ $json.body.source || 'web' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [80, 0],
+      "id": "extract-web-data",
+      "name": "Extraer Datos"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres **FullStackBot**, el asistente virtual del curso \"Full Stack con SQL Server\" de Rodrigo Paz.\n\n### Usuario\n- **Nombre:** {{ $json.nombre }}\n- **Mensaje:** {{ $json.mensaje }}\n\n### Instrucciones\n1. USA la herramienta `curso_knowledge` para buscar información relevante ANTES de responder\n2. Responde en español mexicano, de forma amigable y breve (max 200 palabras)\n3. Usa 1-2 emojis por mensaje\n4. Si preguntan por inscripción: https://rodrigopaz.space\n5. Si necesitan ayuda humana: WhatsApp +52 56 2229 3752\n6. Si preguntan algo fuera del tema del curso, redirige amablemente\n\nResponde al mensaje del usuario basándote en la información de la base de conocimiento.",
+        "options": {
+          "systemMessage": "Eres FullStackBot, asistente del curso Full Stack con SQL Server. Siempre busca en la base de conocimiento antes de responder. Respuestas breves y útiles en español mexicano."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [320, 0],
+      "id": "ai-agent-web",
+      "name": "AI Agent Web"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 400
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [240, 240],
+      "id": "openai-web",
+      "name": "OpenAI GPT-4o-mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [400, 320],
+      "id": "embeddings-web",
+      "name": "OpenAI Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "curso_knowledge",
+        "toolDescription": "Busca información sobre el curso Full Stack con SQL Server. Usa esta herramienta para responder preguntas sobre precios, horarios, tecnologías, módulos, instructor, requisitos, proceso de inscripción y preguntas frecuentes del curso.",
+        "tableName": "course_knowledge",
+        "queryName": "match_course_knowledge",
+        "topK": 4
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [560, 240],
+      "id": "vector-store-web",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"response\": {{ JSON.stringify($json.output) }},\n  \"session_id\": \"{{ $('Extraer Datos').item.json.session_id }}\",\n  \"timestamp\": {{ Date.now() }}\n}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [560, 0],
+      "id": "respond-web",
+      "name": "Responder al Chat"
+    },
+    {
+      "parameters": {
+        "content": "## Chatbot Web con RAG\n\nEste workflow recibe mensajes desde el ChatWidget de la landing page y usa la base de conocimiento vectorial para responder.\n\n**Webhook:** POST /webhook/chatbot-web\n\n**Requiere:**\n- Credencial OpenAI\n- Credencial Supabase\n- Tabla course_knowledge poblada",
+        "height": 200,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-400, -240],
+      "id": "sticky-note",
+      "name": "Instrucciones"
+    }
+  ],
+  "connections": {
+    "Webhook Chat Web": {
+      "main": [
+        [
+          {
+            "node": "Validar Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Mensaje": {
+      "main": [
+        [
+          {
+            "node": "Extraer Datos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error: Sin Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Web",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4o-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Web",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Web",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Web": {
+      "main": [
+        [
+          {
+            "node": "Responder al Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "chatbot-web-rag"
+  }
+}

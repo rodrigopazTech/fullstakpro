@@ -1,0 +1,203 @@
+services:
+  # 1. Base de Datos Principal (PostgreSQL)
+  # Almacena los datos permanentes de N8N y Evolution API
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: postgres
+    restart: always
+    environment:
+      # Credenciales para el superusuario de esta instancia de DB
+      - POSTGRES_USER=rodrigo_db_admin
+      - POSTGRES_PASSWORD=chatbot_db_password
+      - POSTGRES_DB=main_db # DB inicial
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+
+  # 2. Redis (Gestor de Colas y Cache)
+  # Usado por N8N y Evolution API
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    command: redis-server --port 6379 --appendonly yes
+    # Puerto de Redis (solo interno, no es necesario exponerlo al host)
+   
+  # 3. N8N Servidor Principal (UI y Webhooks)
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n_main
+    ports:
+      - "5678:5678"
+    environment:
+      # Conexión a PostgreSQL (Debe usar las credenciales que creaste en 'postgres')
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_DATABASE=n8n_db
+      - DB_POSTGRESDB_USER=rodrigo_db_admin
+      - DB_POSTGRESDB_PASSWORD=chatbot_db_password
+     
+      # Conexión a Redis
+      - QUEUE_TYPE=redis
+      - QUEUE_REDIS_URL=redis://redis:6379/
+     
+      # MODO CLAVE: Solo escucha Webhooks y gestiona la cola.
+      - N8N_EXECUTIONS_MODE=queue
+     
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - postgres
+      - redis
+
+
+  # 4. N8N Worker (Ejecutor de Tareas)
+  n8n_worker:
+    image: n8nio/n8n
+    container_name: n8n_worker_1
+    restart: always
+    environment:
+      # Mismas conexiones a DB y Redis que el servidor principal
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_DATABASE=n8n_db
+      - DB_POSTGRESDB_USER=rodrigo_db_admin
+      - DB_POSTGRESDB_PASSWORD=chatbot_db_password
+      - QUEUE_TYPE=redis
+      - QUEUE_REDIS_URL=redis://redis:6379/
+     
+      # MODO CLAVE: Solo ejecuta tareas de la cola.
+      - N8N_EXECUTIONS_MODE=worker
+     
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - postgres
+      - redis
+      - n8n
+
+
+  # 5. Servidor de la Evolution API (Conexión de WhatsApp/FB)
+  evolution_api:
+    image: evoapicloud/evolution-api:latest
+    container_name: evolution_api
+    restart: always
+    ports:
+      - "8080:8080" # Puerto de la API
+    volumes:
+      - evolution_instances:/evolution/instances
+    environment:
+      - SERVER_TYPE=http
+      - SERVER_PORT=8080
+      - SERVER_URL=http://evolution_api:8080
+      - AUTHENTICATION_API_KEY=123456 # ¡CLAVE!
+      # - CONFIG_SESSION_PHONE_VERSION=2.3000.1023204200
+     
+      # Habilitar integración con Chatwoot
+      - CHATWOOT_ENABLED=true
+      - CHATWOOT_MESSAGE_READ=true
+      - CHATWOOT_MESSAGE_DELETE=true
+      
+      # Conexión a PostgreSQL para persistencia de sesiones de WhatsApp
+      # Usaremos las credenciales del superusuario de PostgreSQL
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://rodrigo_db_admin:chatbot_db_password@postgres:5432/evolution_db
+     
+      # Conexión a Redis para cache y colas
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379/6
+      - CACHE_REDIS_TTL=604800
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - CACHE_REDIS_SAVE_INSTANCES=false
+      - WEBSOCKET_ENABLED=true
+      - WEBSOCKET_GLOBAL_EVENTS=true
+     
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    depends_on:
+      - postgres
+      - redis
+
+
+  # 6. Herramienta de Administración de DB (pgAdmin)
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: pgadmin
+  #   ports:
+  #     - "5050:80"
+  #   environment:
+  #     # Credenciales para iniciar sesión en pgAdmin (¡REEMPLAZAR!)
+  #     - PGADMIN_DEFAULT_EMAIL=chatbot@example.com
+  #     - PGADMIN_DEFAULT_PASSWORD=chatbot_pgadmin_password
+  #   depends_on:
+  #     - postgres
+
+  # 7. Chatwoot Web (Interfaz de Usuario)
+  chatwoot:
+    image: chatwoot/chatwoot:latest
+    container_name: chatwoot
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - FRONTEND_URL=http://localhost:3000
+      - NODE_ENV=production
+      - RAILS_ENV=production
+      - INSTALLATION_ENV=docker
+      
+      # Base de Datos (Usamos la misma instancia de Postgres)
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USERNAME=rodrigo_db_admin
+      - POSTGRES_PASSWORD=chatbot_db_password
+      - POSTGRES_DATABASE=chatwoot_production
+      
+      # Redis (Usamos la misma instancia, pero DB 1)
+      - REDIS_URL=redis://redis:6379/1
+      
+      # Claves de Seguridad (¡CAMBIAR EN PRODUCCIÓN!)
+      - SECRET_KEY_BASE=3b7a5c9d2e1f8a4b6c0d3e5f7a9b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b
+      
+      # Correo (Configuración básica para que no falle al inicio)
+      - MAILER_SENDER_EMAIL=chatwoot@localhost
+      - SMTP_DOMAIN=localhost
+      
+    command: ['sh', '-c', 'rm -f /app/tmp/pids/server.pid && bundle exec rails s -p 3000 -b 0.0.0.0']
+    volumes:
+      - chatwoot_data:/app/storage
+    depends_on:
+      - postgres
+      - redis
+
+  # 8. Chatwoot Worker (Procesamiento en segundo plano)
+  chatwoot_worker:
+    image: chatwoot/chatwoot:latest
+    container_name: chatwoot_worker
+    restart: always
+    environment:
+      - FRONTEND_URL=http://localhost:3000
+      - NODE_ENV=production
+      - RAILS_ENV=production
+      - INSTALLATION_ENV=docker
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USERNAME=rodrigo_db_admin
+      - POSTGRES_PASSWORD=chatbot_db_password
+      - POSTGRES_DATABASE=chatwoot_production
+      - REDIS_URL=redis://redis:6379/1
+      - SECRET_KEY_BASE=3b7a5c9d2e1f8a4b6c0d3e5f7a9b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b
+      - MAILER_SENDER_EMAIL=chatwoot@localhost
+      - SMTP_DOMAIN=localhost
+    command: ['bundle', 'exec', 'sidekiq', '-C', 'config/sidekiq.yml']
+    volumes:
+      - chatwoot_data:/app/storage
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  n8n_data:
+  postgres_data:
+  evolution_instances:
+  chatwoot_data:

@@ -1,0 +1,568 @@
+{
+  "name": "Chatbot Full Stack - RAG + Buffer",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbot-fullstack",
+        "options": {
+          "responseMode": "responseNode"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-800, 0],
+      "id": "webhook-main",
+      "name": "Webhook Evolution API",
+      "webhookId": "chatbot-fullstack"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "filter-fromMe",
+              "leftValue": "={{ $json.body.data.key.fromMe }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-560, 0],
+      "id": "filter-own-messages",
+      "name": "Filtrar Mensajes Propios"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={\"status\": \"ignored\", \"reason\": \"own message\"}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-320, -160],
+      "id": "respond-ignore",
+      "name": "Ignorar Mensaje Propio"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "phone",
+              "name": "usuario.telefono",
+              "value": "={{ $json.body.data.key.remoteJid.replace('@s.whatsapp.net', '').replace('@lid', '') }}",
+              "type": "string"
+            },
+            {
+              "id": "phone-full",
+              "name": "usuario.telefono_completo",
+              "value": "={{ $json.body.data.key.remoteJid }}",
+              "type": "string"
+            },
+            {
+              "id": "name",
+              "name": "usuario.nombre",
+              "value": "={{ $json.body.data.pushName || 'Usuario' }}",
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "name": "usuario.mensaje",
+              "value": "={{ $json.body.data.message?.conversation || $json.body.data.message?.extendedTextMessage?.text || 'Sin mensaje de texto' }}",
+              "type": "string"
+            },
+            {
+              "id": "message-type",
+              "name": "usuario.tipo_mensaje",
+              "value": "={{ $json.body.data.messageType }}",
+              "type": "string"
+            },
+            {
+              "id": "instance",
+              "name": "instancia.nombre",
+              "value": "={{ $json.body.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "message-id",
+              "name": "usuario.id_mensaje",
+              "value": "={{ $json.body.data.key.id }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "usuario.fecha_mensaje",
+              "value": "={{ ($json.body.data.messageTimestamp * 1000) }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-320, 80],
+      "id": "extract-data",
+      "name": "Extraer Datos del Mensaje"
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $json.usuario.telefono }}_buffer",
+        "messageData": "={{ JSON.stringify({\n  mensaje: $json.usuario.mensaje,\n  sessionID: $json.usuario.id_mensaje,\n  date_time: $json.usuario.fecha_mensaje,\n  tipo: $json.usuario.tipo_mensaje,\n  nombre: $json.usuario.nombre\n}) }}",
+        "tail": true
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [-80, 80],
+      "id": "redis-push",
+      "name": "Redis: Agregar al Buffer",
+      "credentials": {
+        "redis": {
+          "id": "YOUR_REDIS_CREDENTIAL_ID",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "lista_mensajes",
+        "key": "={{ $('Extraer Datos del Mensaje').item.json.usuario.telefono }}_buffer",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [160, 80],
+      "id": "redis-get",
+      "name": "Redis: Obtener Buffer",
+      "credentials": {
+        "redis": {
+          "id": "YOUR_REDIS_CREDENTIAL_ID",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ JSON.parse($json.lista_mensajes.first()).sessionID }}",
+                    "rightValue": "={{ $('Redis: Agregar al Buffer').item.json.usuario.id_mensaje }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    },
+                    "id": "check-new-message"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ignorar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "check-timeout",
+                    "leftValue": "={{ (JSON.parse($json.lista_mensajes.first()).date_time) }}",
+                    "rightValue": "={{ Date.now() - 20000 }}",
+                    "operator": {
+                      "type": "number",
+                      "operation": "lt"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "procesar"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "esperar"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [400, 80],
+      "id": "switch-buffer",
+      "name": "Decidir: Esperar o Procesar"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={\"status\": \"ignored\", \"reason\": \"waiting for more messages\"}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [640, -80],
+      "id": "respond-ignore-buffer",
+      "name": "Ignorar (Nuevo Mensaje Llegó)"
+    },
+    {
+      "parameters": {
+        "amount": 20
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [640, 240],
+      "id": "wait-buffer",
+      "name": "Esperar 20 segundos",
+      "webhookId": "wait-buffer-fullstack"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $('Extraer Datos del Mensaje').item.json.usuario.telefono }}_buffer"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [640, 80],
+      "id": "redis-delete",
+      "name": "Redis: Limpiar Buffer",
+      "credentials": {
+        "redis": {
+          "id": "YOUR_REDIS_CREDENTIAL_ID",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "lista_mensajes",
+        "key": "={{ $('Extraer Datos del Mensaje').item.json.usuario.telefono }}_buffer",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [880, 240],
+      "id": "redis-get-after-wait",
+      "name": "Redis: Obtener Mensajes Finales",
+      "credentials": {
+        "redis": {
+          "id": "YOUR_REDIS_CREDENTIAL_ID",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combinar todos los mensajes del buffer en uno solo\nconst items = $input.all();\nconst listaMensajes = items[0].json.lista_mensajes;\n\nlet mensajesCombinados = [];\nlet nombreUsuario = 'Usuario';\n\nif (listaMensajes && Array.isArray(listaMensajes)) {\n  for (const msg of listaMensajes) {\n    try {\n      const parsed = JSON.parse(msg);\n      if (parsed.mensaje && parsed.mensaje !== 'Sin mensaje de texto') {\n        mensajesCombinados.push(parsed.mensaje);\n      }\n      if (parsed.nombre) {\n        nombreUsuario = parsed.nombre;\n      }\n    } catch (e) {\n      // Si ya es string, agregarlo directamente\n      if (typeof msg === 'string') {\n        mensajesCombinados.push(msg);\n      }\n    }\n  }\n} else if (typeof listaMensajes === 'string') {\n  try {\n    const parsed = JSON.parse(listaMensajes);\n    mensajesCombinados.push(parsed.mensaje || listaMensajes);\n    nombreUsuario = parsed.nombre || 'Usuario';\n  } catch (e) {\n    mensajesCombinados.push(listaMensajes);\n  }\n}\n\nconst mensajeFinal = mensajesCombinados.join('\\n');\n\nreturn [{\n  json: {\n    mensaje_combinado: mensajeFinal || 'Hola',\n    nombre_usuario: nombreUsuario,\n    telefono: $('Extraer Datos del Mensaje').item.json.usuario.telefono,\n    telefono_completo: $('Extraer Datos del Mensaje').item.json.usuario.telefono_completo,\n    instancia: $('Extraer Datos del Mensaje').item.json.instancia.nombre,\n    cantidad_mensajes: mensajesCombinados.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 80],
+      "id": "combine-messages",
+      "name": "Combinar Mensajes del Buffer"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres **FullStackBot**, el asistente virtual del curso \"Full Stack con SQL Server\" impartido por Rodrigo Paz.\n\nTu objetivo es ayudar a los usuarios interesados en el curso, respondiendo preguntas sobre:\n- Contenido del curso\n- Precios y planes de pago\n- Horarios y calendario\n- Requisitos previos\n- Tecnologías que aprenderán\n- Proceso de inscripción\n\n---\n\n### Información del Usuario\n- **Nombre:** {{ $json.nombre_usuario }}\n- **Mensaje:** {{ $json.mensaje_combinado }}\n\n---\n\n### Información del Curso (Base de Conocimiento)\n\n**CURSO: Full Stack con SQL Server**\n- **Instructor:** Rodrigo Paz (@rodrigopaztech)\n- **Duración:** 16 clases (4 módulos de 4 clases cada uno)\n- **Horario:** Sábados de 9:00 AM a 2:00 PM (5 horas por clase)\n- **Modalidad:** En vivo por Zoom + Grabaciones de por vida\n- **Inicio:** Enero 2026\n- **Fechas de clase:** 3, 10, 24, 31 de Enero (17 de Enero es descanso)\n\n**MÓDULOS:**\n1. **Módulo 1: Fundamentos** (Clases 1-4) - Arquitectura web, servidores, PHP básico, Git\n2. **Módulo 2: Base de Datos** (Clases 5-8) - SQL Server, consultas, procedimientos almacenados\n3. **Módulo 3: Frontend** (Clases 9-12) - JavaScript, HTML5, CSS3\n4. **Módulo 4: Framework y Proyecto** (Clases 13-16) - Bootstrap, diseño responsivo, proyecto integrador\n\n**PRECIOS:**\n- Módulo 1: $399 MXN (precio especial de introducción)\n- Módulos 2, 3, 4: $499 MXN cada uno\n- Curso Completo: $1,800 MXN (ahorras $196)\n\n**TECNOLOGÍAS QUE APRENDERÁS:**\n- Backend: PHP, SQL Server\n- Frontend: JavaScript, HTML5, CSS3, Bootstrap\n- Herramientas: Nginx, Git, SSMS, PHP-FPM\n- Bonus: Docker (si completas el curso)\n\n**INCLUYE:**\n- Clases en vivo interactivas\n- Grabaciones de por vida\n- Soporte vía WhatsApp\n- Materiales y recursos descargables\n- Certificado de finalización (curso completo)\n- Proyecto integrador revisado (curso completo)\n- 2 sesiones de asesoría 1 a 1 (curso completo)\n\n**REQUISITOS:**\n- Computadora con acceso a internet\n- Conocimientos básicos de programación (recomendado pero no obligatorio)\n- Disposición para aprender y practicar\n\n**FORMAS DE PAGO:**\n- Mercado Pago (tarjeta de crédito/débito, OXXO, transferencia)\n- Pagos seguros con SSL\n\n**INSCRIPCIÓN:**\n1. Visita la página: https://rodrigopaz.space\n2. Selecciona tu plan (Módulo 1 o Curso Completo)\n3. Completa el formulario con tus datos\n4. Realiza el pago con Mercado Pago\n5. Recibe confirmación por WhatsApp y email\n\n---\n\n### Reglas de Respuesta\n\n1. **Sé amable y profesional** - Usa el nombre del usuario cuando sea apropiado\n2. **Respuestas cortas y claras** - Máximo 300 caracteres para WhatsApp\n3. **Usa emojis con moderación** - 1-2 por mensaje máximo\n4. **Si preguntan algo fuera del tema**, redirige amablemente al curso\n5. **Para inscripciones**, siempre menciona: https://rodrigopaz.space\n6. **Si no sabes algo**, ofrece contactar a Rodrigo por WhatsApp\n\n### Palabras Clave para Acciones Especiales\n- \"precio\", \"costo\", \"cuánto\" → Mostrar precios\n- \"inscribir\", \"registrar\", \"pagar\" → Dar link de inscripción\n- \"horario\", \"cuándo\", \"fecha\" → Mostrar calendario\n- \"humano\", \"asesor\", \"rodrigo\" → Ofrecer contacto directo\n\n---\n\nResponde de manera natural y conversacional en español mexicano.",
+        "options": {
+          "systemMessage": "Eres FullStackBot, asistente del curso Full Stack con SQL Server. Responde siempre en español mexicano, de forma breve y amigable. Nunca inventes información que no esté en tu base de conocimiento."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [1120, 80],
+      "id": "ai-agent",
+      "name": "AI Agent - FullStackBot"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 500
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [1040, 320],
+      "id": "openai-model",
+      "name": "OpenAI GPT-4o-mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evolution.rodrigopaz.space/message/sendText/RodrigoPazTech",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "4960104cb9470197be95a7ee15728ced334ab29c8fe43d14"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Combinar Mensajes del Buffer').item.json.telefono }}\",\n  \"text\": \"{{ $json.output.replace(/\"/g, '\\\\\"').replace(/\\n/g, '\\\\n') }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1360, 80],
+      "id": "send-whatsapp",
+      "name": "Enviar Respuesta WhatsApp"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={\"status\": \"success\", \"message\": \"Response sent\"}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1600, 80],
+      "id": "respond-success",
+      "name": "Responder Webhook OK"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $('Extraer Datos del Mensaje').item.json.usuario.telefono }}_buffer"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [1120, 240],
+      "id": "redis-delete-after-response",
+      "name": "Redis: Limpiar Después de Responder",
+      "credentials": {
+        "redis": {
+          "id": "YOUR_REDIS_CREDENTIAL_ID",
+          "name": "Redis account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Evolution API": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Mensajes Propios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Mensajes Propios": {
+      "main": [
+        [
+          {
+            "node": "Ignorar Mensaje Propio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extraer Datos del Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos del Mensaje": {
+      "main": [
+        [
+          {
+            "node": "Redis: Agregar al Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Agregar al Buffer": {
+      "main": [
+        [
+          {
+            "node": "Redis: Obtener Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Obtener Buffer": {
+      "main": [
+        [
+          {
+            "node": "Decidir: Esperar o Procesar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decidir: Esperar o Procesar": {
+      "main": [
+        [
+          {
+            "node": "Ignorar (Nuevo Mensaje Llegó)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis: Limpiar Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Esperar 20 segundos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Limpiar Buffer": {
+      "main": [
+        [
+          {
+            "node": "Combinar Mensajes del Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar 20 segundos": {
+      "main": [
+        [
+          {
+            "node": "Redis: Obtener Mensajes Finales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Obtener Mensajes Finales": {
+      "main": [
+        [
+          {
+            "node": "Combinar Mensajes del Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combinar Mensajes del Buffer": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - FullStackBot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4o-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - FullStackBot",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - FullStackBot": {
+      "main": [
+        [
+          {
+            "node": "Enviar Respuesta WhatsApp",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Redis: Limpiar Después de Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Respuesta WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder Webhook OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fullstack-chatbot-rag-buffer"
+  }
+}

@@ -1,0 +1,248 @@
+{
+  "name": "Chatbot Web - Landing Page",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbot-web",
+        "options": {
+          "responseMode": "responseNode"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-400, 0],
+      "id": "webhook-web",
+      "name": "Webhook Chat Web",
+      "webhookId": "chatbot-web"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "session",
+              "name": "session_id",
+              "value": "={{ $json.body.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "name",
+              "name": "nombre",
+              "value": "={{ $json.body.user?.name || 'Usuario' }}",
+              "type": "string"
+            },
+            {
+              "id": "phone",
+              "name": "telefono",
+              "value": "={{ $json.body.user?.phone || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "name": "mensaje",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "source",
+              "name": "fuente",
+              "value": "={{ $json.body.source || 'web' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-160, 0],
+      "id": "extract-web-data",
+      "name": "Extraer Datos"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres **FullStackBot**, el asistente virtual del curso \"Full Stack con SQL Server\" impartido por Rodrigo Paz.\n\nTu objetivo es ayudar a los usuarios interesados en el curso, respondiendo preguntas de forma clara, amigable y concisa.\n\n---\n\n### Usuario\n- **Nombre:** {{ $json.nombre }}\n- **Mensaje:** {{ $json.mensaje }}\n\n---\n\n### Información del Curso\n\n**CURSO: Full Stack con SQL Server**\n- **Instructor:** Rodrigo Paz (@rodrigopaztech)\n- **Duración:** 16 clases (4 módulos de 4 clases)\n- **Horario:** Sábados de 9:00 AM a 2:00 PM (CDMX)\n- **Modalidad:** En vivo por Zoom + Grabaciones de por vida\n- **Inicio:** Enero 2026\n- **Fechas Módulo 1:** 3, 10, 24, 31 de Enero (17 Enero es descanso)\n\n**PRECIOS:**\n- Módulo 1: $399 MXN (precio especial)\n- Módulos 2-4: $499 MXN cada uno\n- Curso Completo: $1,800 MXN (ahorras $196)\n\n**TECNOLOGÍAS:**\n- Backend: PHP, SQL Server\n- Frontend: JavaScript, HTML5, CSS3, Bootstrap\n- Herramientas: Nginx, Git, SSMS, Docker (bonus)\n\n**MÓDULOS:**\n1. Fundamentos Web (PHP, servidores, Git)\n2. Base de Datos (SQL Server, consultas, procedimientos)\n3. Frontend (JavaScript, DOM, AJAX)\n4. Bootstrap y Proyecto Final\n\n**INCLUYE:**\n- Clases en vivo interactivas\n- Grabaciones de por vida\n- Soporte por WhatsApp\n- Materiales descargables\n- Certificado (curso completo)\n- 2 asesorías 1:1 (curso completo)\n\n**REQUISITOS:**\n- Computadora con internet\n- Ganas de aprender\n\n**INSCRIPCIÓN:** https://rodrigopaz.space\n**WhatsApp:** +52 56 2229 3752\n\n---\n\n### Reglas de Respuesta\n\n1. Responde en español mexicano, de forma amigable\n2. Máximo 200 palabras por respuesta\n3. Usa 1-2 emojis máximo\n4. Si preguntan precio → muestra opciones\n5. Si quieren inscribirse → link: https://rodrigopaz.space\n6. Si preguntan algo no relacionado → redirige al curso amablemente\n7. Si necesitan ayuda humana → WhatsApp: +52 56 2229 3752\n\nResponde al mensaje del usuario de forma natural y útil.",
+        "options": {
+          "systemMessage": "Eres FullStackBot, un asistente amigable y experto en el curso Full Stack con SQL Server. Responde siempre en español mexicano, de forma breve y clara."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [80, 0],
+      "id": "ai-agent-web",
+      "name": "AI Agent Web"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 400
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [0, 240],
+      "id": "openai-web",
+      "name": "OpenAI GPT-4o-mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"response\": \"{{ $json.output.replace(/\"/g, '\\\\\"').replace(/\\n/g, '\\\\n') }}\",\n  \"session_id\": \"{{ $('Extraer Datos').item.json.session_id }}\",\n  \"timestamp\": {{ Date.now() }}\n}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [320, 0],
+      "id": "respond-web",
+      "name": "Responder al Chat"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-message",
+              "leftValue": "={{ $json.body.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-280, 0],
+      "id": "validate-message",
+      "name": "Validar Mensaje"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"error\": \"No message provided\",\n  \"response\": \"Por favor envía un mensaje.\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-160, -160],
+      "id": "respond-error",
+      "name": "Error: Sin Mensaje"
+    }
+  ],
+  "connections": {
+    "Webhook Chat Web": {
+      "main": [
+        [
+          {
+            "node": "Validar Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Mensaje": {
+      "main": [
+        [
+          {
+            "node": "Extraer Datos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error: Sin Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Web",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4o-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Web",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Web": {
+      "main": [
+        [
+          {
+            "node": "Responder al Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "chatbot-web-landing"
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "name": "Insertar Knowledge Base - RAG v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "insert-knowledge",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-640, 0],
+      "id": "webhook-insert",
+      "name": "Webhook Insert",
+      "webhookId": "insert-knowledge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Datos del curso para insertar en la base de conocimiento\nconst courseData = [\n  {\n    text: \"El curso Full Stack con SQL Server es impartido por Rodrigo Paz (@rodrigopaztech). Tiene una duración de 16 clases divididas en 4 módulos de 4 clases cada uno. Las clases son los sábados de 9:00 AM a 2:00 PM (5 horas por clase) en modalidad en vivo por Zoom con grabaciones de por vida.\",\n    metadata: { category: \"general\", topic: \"descripcion\" }\n  },\n  {\n    text: \"El Módulo 1: Fundamentos Web tiene un precio especial de $399 MXN como oferta de introducción. Incluye 4 clases donde aprenderás arquitectura cliente-servidor, servidores web con Nginx, PHP-FPM, protocolos HTTP/HTTPS, control de versiones con Git, sintaxis básica de PHP, variables, tipos de datos, operadores, estructuras de control, funciones, manejo de formularios POST/GET, sesiones y cookies.\",\n    metadata: { category: \"modulo\", topic: \"modulo1\", precio: 399 }\n  },\n  {\n    text: \"El Módulo 2: Base de Datos con SQL Server cuesta $499 MXN. En las clases 5 a 8 aprenderás conceptos de bases de datos relacionales, SQL básico (SELECT, INSERT, UPDATE, DELETE), creación de bases de datos y tablas, restricciones (constraints) e índices, joins y subconsultas avanzadas, procedimientos almacenados y funciones, uso de SQL Server Management Studio (SSMS) y conexión desde PHP usando sqlsrv y PDO.\",\n    metadata: { category: \"modulo\", topic: \"modulo2\", precio: 499 }\n  },\n  {\n    text: \"El Módulo 3: Frontend con JavaScript cuesta $499 MXN. En las clases 9 a 12 aprenderás JavaScript desde cero: sintaxis, variables, tipos de datos, manipulación del DOM, manejo de eventos, funciones y alcance (scope), programación asíncrona con Promises y async/await, Fetch API para peticiones AJAX, manejo de JSON, características ES6+ como arrow functions y template literals, HTML5 con elementos semánticos, y CSS3 con selectores, propiedades, box model, Flexbox y CSS Grid.\",\n    metadata: { category: \"modulo\", topic: \"modulo3\", precio: 499 }\n  },\n  {\n    text: \"El Módulo 4: Bootstrap y Proyecto Final cuesta $499 MXN. En las clases 13 a 16 aprenderás el sistema de grid de Bootstrap, componentes como Cards, Forms, Buttons y Modals, utilidades y clases de Bootstrap, personalización, diseño responsivo, y desarrollarás tu Proyecto Integrador: una aplicación Full-Stack completa que integra frontend y backend con SQL Server.\",\n    metadata: { category: \"modulo\", topic: \"modulo4\", precio: 499 }\n  },\n  {\n    text: \"El Curso Completo (16 clases) tiene un precio de $1,800 MXN. Esto representa un ahorro de $196 MXN comparado con comprar los módulos por separado ($399 + $499 + $499 + $499 = $1,896). El curso completo incluye: certificado de finalización, proyecto integrador revisado por el instructor, 2 sesiones de asesoría 1 a 1 de 30 minutos cada una, y el bonus de Docker.\",\n    metadata: { category: \"precio\", topic: \"curso_completo\", precio: 1800 }\n  },\n  {\n    text: \"El curso inicia en Enero 2026. Las fechas del Módulo 1 son: Sábado 3 de Enero (Clase 1), Sábado 10 de Enero (Clase 2), Sábado 17 de Enero es DESCANSO (no hay clase), Sábado 24 de Enero (Clase 3), Sábado 31 de Enero (Clase 4). El horario es de 9:00 AM a 2:00 PM hora de Ciudad de México (GMT-6).\",\n    metadata: { category: \"calendario\", topic: \"fechas\" }\n  },\n  {\n    text: \"Las tecnologías que aprenderás en el curso son: Backend con PHP y SQL Server. Frontend con JavaScript, HTML5, CSS3 y Bootstrap. Herramientas como Nginx (servidor web), Git (control de versiones), SQL Server Management Studio (SSMS) para administrar bases de datos, y PHP-FPM. Además, si completas el curso completo, recibes un bonus de Docker para aprender sobre contenedores y despliegue.\",\n    metadata: { category: \"tecnologias\", topic: \"stack\" }\n  },\n  {\n    text: \"Los requisitos para tomar el curso son: tener una computadora (Windows, Mac o Linux), conexión estable a internet, micrófono y cámara (recomendado para interactuar). Es recomendable pero NO obligatorio tener conocimientos básicos de programación. El curso está diseñado para principiantes pero avanza a ritmo rápido.\",\n    metadata: { category: \"requisitos\", topic: \"prerequisitos\" }\n  },\n  {\n    text: \"El curso incluye: clases en vivo interactivas donde puedes preguntar en tiempo real, grabaciones de por vida para que repases cuando quieras, soporte vía WhatsApp para resolver dudas entre clases, materiales y recursos descargables (código, slides, ejercicios), y comunidad de estudiantes en grupo privado de WhatsApp.\",\n    metadata: { category: \"beneficios\", topic: \"incluye\" }\n  },\n  {\n    text: \"Para inscribirte al curso: 1) Visita la página https://rodrigopaz.space, 2) Selecciona tu plan (Módulo 1 a $399 o Curso Completo a $1,800), 3) Completa el formulario con tu nombre, email y teléfono, 4) Realiza el pago con Mercado Pago (acepta tarjeta de crédito/débito, OXXO, transferencia), 5) Recibe confirmación por WhatsApp y email con los datos de acceso.\",\n    metadata: { category: \"inscripcion\", topic: \"proceso\" }\n  },\n  {\n    text: \"Las formas de pago disponibles son a través de Mercado Pago: tarjeta de crédito o débito (Visa, Mastercard, American Express), pago en OXXO, transferencia bancaria. Dependiendo de tu banco puedes pagar hasta en 12 meses sin intereses. Todos los pagos son seguros con SSL.\",\n    metadata: { category: \"pago\", topic: \"metodos\" }\n  },\n  {\n    text: \"Si necesitas ayuda o tienes preguntas sobre el curso, puedes contactar a Rodrigo Paz por WhatsApp al +52 56 2229 3752, seguirlo en Instagram @rodrigopaztech, visitar la web https://rodrigopaz.space o escribir al email contacto@rodrigopaz.space. El tiempo de respuesta es menor a 24 horas.\",\n    metadata: { category: \"contacto\", topic: \"soporte\" }\n  },\n  {\n    text: \"Preguntas frecuentes: ¿Necesito saber programar? No es obligatorio, pero ayuda. El curso está diseñado para principiantes. ¿Puedo tomar solo un módulo? Sí, cada módulo tiene precio individual. Recomendamos empezar desde el Módulo 1. ¿Qué pasa si no puedo asistir a una clase? Todas las clases quedan grabadas y tienes acceso de por vida.\",\n    metadata: { category: \"faq\", topic: \"preguntas_generales\" }\n  },\n  {\n    text: \"Más preguntas frecuentes: ¿Dan certificado? Sí, al completar el curso completo (16 clases) recibes certificado digital. ¿Hay meses sin intereses? Sí, dependiendo de tu banco puedes pagar hasta en 12 meses sin intereses a través de Mercado Pago. ¿En qué horario son las clases? Sábados de 9:00 AM a 2:00 PM hora de Ciudad de México.\",\n    metadata: { category: \"faq\", topic: \"certificado_y_pagos\" }\n  },\n  {\n    text: \"Garantía de satisfacción: Si después de la primera clase sientes que el curso no es para ti, te devolvemos el 100% de tu dinero sin hacer preguntas. Queremos que estés completamente satisfecho con tu inversión en educación.\",\n    metadata: { category: \"garantia\", topic: \"devolucion\" }\n  },\n  {\n    text: \"Sobre el instructor: Rodrigo Paz (@rodrigopaztech) es Desarrollador Web Full-Stack con experiencia en PHP Backend Development, SQL Server Database Administration, JavaScript Frontend Development, Responsive Web Design, Bootstrap Framework y Docker/DevOps. Es apasionado por enseñar programación de manera práctica, conectando todos los conceptos que en la universidad te enseñan por separado.\",\n    metadata: { category: \"instructor\", topic: \"rodrigo_paz\" }\n  }\n];\n\nreturn courseData.map(item => ({ json: item }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-400, 0],
+      "id": "generate-data",
+      "name": "Generar Datos del Curso"
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [-80, 160],
+      "id": "document-loader",
+      "name": "Document Loader"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": "course_knowledge",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [160, 0],
+      "id": "vector-store-insert",
+      "name": "Insertar en Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [-80, 320],
+      "id": "embeddings-insert",
+      "name": "OpenAI Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Workflow: Insertar Knowledge Base\n\n1. Ejecuta este workflow UNA SOLA VEZ para poblar la base de conocimiento\n2. Asegúrate de tener configuradas las credenciales de Supabase y OpenAI\n3. El webhook es: POST /webhook/insert-knowledge",
+        "height": 180,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-640, -200],
+      "id": "sticky-note",
+      "name": "Instrucciones"
+    }
+  ],
+  "connections": {
+    "Webhook Insert": {
+      "main": [
+        [
+          {
+            "node": "Generar Datos del Curso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Datos del Curso": {
+      "main": [
+        [
+          {
+            "node": "Insertar en Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Insertar en Supabase",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insertar en Supabase",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "insert-knowledge-rag-v2"
+  }
+}

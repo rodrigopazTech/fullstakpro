@@ -1,0 +1,1347 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a6481790-710b-4a84-a9e1-7140dd06934f",
+                    "leftValue": "={{ $json.message_type }}",
+                    "rightValue": "audioMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c1f1a360-ae5e-4795-bc74-a9e42dd67434",
+                    "leftValue": "={{ $json.message_type }}",
+                    "rightValue": "imageMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Imagen"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message_type }}",
+                    "rightValue": "conversation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "de73385e-bd71-4f0e-9c2b-38ff4c2239b4"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "bfda86ee-8181-4b00-b335-ec196b764704",
+                    "leftValue": "={{ $json.message_type }}",
+                    "rightValue": "stickerMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sticker"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "edbff7bc-cbc2-4446-bd2d-73913cc24c6a",
+                    "leftValue": "={{ $json.message_type }}",
+                    "rightValue": "documentMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Documento"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -576,
+        -32
+      ],
+      "id": "c6c36963-5b4c-4934-a7a4-930cc1d27060",
+      "name": "Switch",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "resource": "chat-api",
+        "operation": "get-media-base64",
+        "instanceName": "={{ $('Webhook').item.json.body.instance }}",
+        "messageId": "={{ $('Webhook').item.json.body.data.key.id }}"
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        -208
+      ],
+      "id": "54f76178-d9ea-429f-83c1-bd986a97d72a",
+      "name": "Obter m dia em base64",
+      "credentials": {
+        "evolutionApi": {
+          "id": "eI6fOCogFyYKZUOQ",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data.base64",
+        "options": {
+          "mimeType": "audio/mp3"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -96,
+        -208
+      ],
+      "id": "9e3a2610-8c7f-46e3-8820-a70340c23fd5",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        128,
+        -208
+      ],
+      "id": "7c392110-8571-4c0c-af31-3274c1721a2c",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "openAiApi": {
+          "id": "wVGfrXuFSe27SX24",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "={{ $('Webhook').item.json.body.instance }}",
+        "remoteJid": "={{ $('Webhook').item.json.body.data.key.remoteJid }}",
+        "messageText": "={{ $json.output }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        1968,
+        112
+      ],
+      "id": "021feaec-33a2-4ed8-81a6-86c83ea294ec",
+      "name": "Enviar texto",
+      "credentials": {
+        "evolutionApi": {
+          "id": "eI6fOCogFyYKZUOQ",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat-api",
+        "operation": "get-media-base64",
+        "instanceName": "={{ $('Webhook').item.json.body.instance }}",
+        "messageId": "={{ $('Webhook').item.json.body.data.key.id }}"
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        -16
+      ],
+      "id": "ac387271-6e1d-4f45-8b1c-dcdc344d9a04",
+      "name": "Obter m dia em base",
+      "credentials": {
+        "evolutionApi": {
+          "id": "eI6fOCogFyYKZUOQ",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data.base64",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -96,
+        -16
+      ],
+      "id": "171e5bfb-1ffb-4462-b9a5-5c72f5c35f20",
+      "name": "Convert to File1"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "text": "Analiza la imagen y dime que ves. Tus respuestas siempre deben empezar con la siguiente frase: \"El usuario ha enviado una foto con las siguientes caracteristicas analizadas por una IA: \"",
+        "inputType": "base64",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        144,
+        -16
+      ],
+      "id": "e0072002-c6d5-4244-97d6-90df09e47c2f",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "id": "wVGfrXuFSe27SX24",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "speech",
+        "voice": {
+          "__rl": true,
+          "value": "FGY2WhTYpPnrIDTdsKH5",
+          "mode": "list",
+          "cachedResultName": "Laura - Enthusiast, Quirky Attitude"
+        },
+        "text": "={{ $json.output }}",
+        "additionalOptions": {},
+        "requestOptions": {}
+      },
+      "type": "@elevenlabs/n8n-nodes-elevenlabs.elevenLabs",
+      "typeVersion": 1,
+      "position": [
+        1968,
+        -48
+      ],
+      "id": "2b208061-9a54-4c8a-a9c8-1f7884a55c99",
+      "name": "Convert text to speech",
+      "credentials": {
+        "elevenLabsApi": {
+          "id": "tZH0FrEsWhZtak0v",
+          "name": "ElevenLabs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        2160,
+        -48
+      ],
+      "id": "55b62320-3e54-4c79-b6dd-c70cc573ee5f",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Webhook').item.json.body.data.messageType }}",
+                    "rightValue": "audioMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "15d338e9-8a1d-4f37-b56a-a6f6ed7dc321"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0da6b21e-bd96-4295-945e-ba565c820fb2",
+                    "leftValue": "={{ $('Webhook').item.json.body.data.messageType }}",
+                    "rightValue": "conversation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Texto"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2eb4d202-8e0e-4c58-84f0-3634e2ba0347",
+                    "leftValue": "={{ $('Webhook').item.json.body.data.messageType }}",
+                    "rightValue": "imageMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1744,
+        80
+      ],
+      "id": "a9399033-8c87-4072-b679-bec0f486d593",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "operation": "send-audio",
+        "instanceName": "={{ $('Webhook').item.json.body.instance }}",
+        "remoteJid": "={{ $('Webhook').item.json.body.data.key.remoteJidAlt }}",
+        "media": "={{ $('Extract from File').item.json.data }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        2320,
+        -48
+      ],
+      "id": "823a0d71-95a4-42c9-b10b-c68a1268fb34",
+      "name": "Enviar audio",
+      "credentials": {
+        "evolutionApi": {
+          "id": "eI6fOCogFyYKZUOQ",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bd6e73a8-9cd6-4ad9-be5e-30332d96210b",
+              "name": "sender",
+              "value": "={{ $('Webhook').item.json.body.data.key.remoteJidAlt }}",
+              "type": "string"
+            },
+            {
+              "id": "09faa307-e28b-4c29-95f9-edf60d747912",
+              "name": "mensaje",
+              "value": "={{ $('Webhook').item.json.body.data.message.conversation }}",
+              "type": "string"
+            },
+            {
+              "id": "ddd1cb18-1c7e-45bc-a41e-0f3666683f6b",
+              "name": "instancia",
+              "value": "={{ $('Webhook').item.json.body.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "795ca905-0b30-4dbf-b8f6-d1ba694050c3",
+              "name": "session_id",
+              "value": "={{ $('Webhook').item.json.body.data.key.id }}",
+              "type": "string"
+            },
+            {
+              "id": "b8572e53-6e17-4600-9f27-f05070932fbc",
+              "name": "mensaje_timestamp",
+              "value": "={{ $('Webhook').item.json.body.data.messageTimestamp }}",
+              "type": "number"
+            },
+            {
+              "id": "4fa93b8c-5f7c-46e8-a533-0f69800d4990",
+              "name": "message_type",
+              "value": "={{ $('Webhook').item.json.body.data.messageType }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -784,
+        16
+      ],
+      "id": "831f6735-8abf-458d-94bf-dcbea33a8637",
+      "name": "Data Principal"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bf5a7e8c-8cac-4063-b002-9af86e0f8cef",
+              "name": "mensaje",
+              "value": "={{ $('Webhook').item.json.body.data.message.conversation }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        160
+      ],
+      "id": "8e50e8cf-b7ed-496d-9dcb-09b16499f8b7",
+      "name": "Mensaje Texto"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0bc7064a-8405-4247-87f3-4fc0c9fc5df4",
+              "name": "mensaje",
+              "value": "={{ $json['0'].content[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        368,
+        -16
+      ],
+      "id": "bf2bbb9a-7267-4d08-95d5-ab9969b2d59a",
+      "name": "Mensaje Imagen"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bec0d8d3-b8f1-40ac-a00c-d8ea10b67023",
+              "name": "mensaje",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        368,
+        -208
+      ],
+      "id": "a316bfd4-a403-4ba2-a819-cab1e2c9a0de",
+      "name": "Mensaje Voz"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ccbfe362-8395-4b6b-96d3-c51da1de653f",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -992,
+        16
+      ],
+      "id": "1a926b8d-f9b7-4e86-9f88-2f1d88ad745b",
+      "name": "Webhook",
+      "webhookId": "ccbfe362-8395-4b6b-96d3-c51da1de653f"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "={{ $('Webhook').item.json.body.instance }}",
+        "remoteJid": "={{ $('Webhook').item.json.body.data.key.remoteJidAlt }}",
+        "messageText": "={{ $('AI Agent').item.json.output }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        288
+      ],
+      "id": "0eb90ea9-47e9-4bd5-93ef-5c7d98cc901f",
+      "name": "Enviar texto1",
+      "credentials": {
+        "evolutionApi": {
+          "id": "eI6fOCogFyYKZUOQ",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Upload your data to test RAG",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Upload your file(s)",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf, .csv",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        784,
+        -272
+      ],
+      "id": "bc75c06c-ad65-475d-b331-3437dff1e821",
+      "name": "Upload your file here",
+      "webhookId": "df136b71-ed0a-41ec-b990-e9b8d58c28d6"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        736,
+        512
+      ],
+      "id": "93fdfb62-680a-4b5b-a6c3-34112a6960b9",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "wVGfrXuFSe27SX24",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        544,
+        272
+      ],
+      "id": "f5ca4b8e-8f4e-4e46-8ea7-f8c35302d411",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "memoryKey": {
+          "__rl": true,
+          "value": "vector_store_key",
+          "mode": "list",
+          "cachedResultName": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.2,
+      "position": [
+        1072,
+        -176
+      ],
+      "id": "dcf1a3ad-f892-41ae-ba1d-35394b03bd63",
+      "name": "Insert Data to Store"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "knowledge_base",
+        "toolDescription": "Use this knowledge base to answer questions from the user",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.2,
+      "position": [
+        1168,
+        320
+      ],
+      "id": "3ca72f26-3e24-435e-8bf5-254bc5488941",
+      "name": "Query Data Tool"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un **chatbot institucional especializado en FINABIEN (Financiera para el Bienestar)**.\nTu función es **brindar orientación ciudadana clara, confiable y apta para respuesta por voz**, proporcionando información sobre:\n\n* Sucursales\n* Trámites y servicios\n* Asistencia al usuario\n* Programas y apoyos de FINABIEN\n\n---\n\n### Mensaje del usuario\n\nEl mensaje del usuario es el siguiente:\n{{ $json.mensaje }}\n\n---\n\n### Reglas críticas de comportamiento (OBLIGATORIAS)\n\n1. **Escalamiento a humano**\n\n   * Si el mensaje del usuario es **exactamente**:\n     **\"hablar con un humano\"**\n     utiliza inmediatamente el tool **\"Hablar con Humano\"**.\n   * No utilices este tool en ningún otro caso.\n\n2. **Uso de la base de conocimiento (RAG)**\n\n   * Antes de responder, realiza una búsqueda en la base de conocimiento.\n   * Utiliza únicamente la información encontrada en los documentos.\n\n---\n\n### Generación de la respuesta\n\n* Si encuentras información relevante:\n\n  * Responde de forma **clara, directa y natural para voz**.\n  * Usa **lenguaje hablado**, como si le hablaras a una persona.\n\n* Si NO encuentras información relevante:\n\n  * Responde únicamente:\n\n    > No puedo encontrar la respuesta en los recursos disponibles.\n  * Si la pregunta no está relacionada con FINABIEN, aclara de forma educada que no es parte de tu función.\n\n---\n\n### Reglas estrictas para compatibilidad con VOZ (MUY IMPORTANTE)\n\n* ❌ NO uses:\n\n  * Markdown (**negritas**, *cursivas*)\n  * Signos especiales: $, %, #, *, guiones decorativos\n  * Abreviaturas técnicas\n\n* ✅ Convierte siempre:\n\n  * \"$50,000 MXN\" → \"cincuenta mil pesos mexicanos\"\n  * \"MXN\" → \"pesos mexicanos\"\n  * Números → palabras cuando sea posible\n  * Horarios → formato hablado\n    Ejemplo: \"9:00 a.m.\" → \"nueve de la mañana\"\n\n* Usa frases naturales:\n\n  * ❌ \"El monto máximo es $50,000 MXN\"\n  * ✅ \"El monto máximo es de cincuenta mil pesos mexicanos\"\n\n---\n\n### Estilo y tono\n\n* Profesional\n* Formal\n* Claro\n* Directo\n* Apto para lectura por voz\n* No inventes información\n* No hagas suposiciones\n\nTu objetivo es **orientar correctamente al ciudadano sin provocar errores en la conversión de texto a voz.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        96
+      ],
+      "id": "e3ee7a4a-fd57-42e6-ae29-d7724b61df6f",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        944,
+        320
+      ],
+      "id": "eb60fc98-ba9a-4987-931a-c6a629de6d22",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "wVGfrXuFSe27SX24",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Obter m dia em base64",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obter m dia em base",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mensaje Texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obter m dia em base64": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Mensaje Voz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obter m dia em base": {
+      "main": [
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File1": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "Mensaje Imagen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert text to speech": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Enviar audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Convert text to speech",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar texto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar texto1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Principal": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje Texto": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje Imagen": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje Voz": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Data Principal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload your file here": {
+      "main": [
+        [
+          {
+            "node": "Insert Data to Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insert Data to Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Query Data Tool",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Insert Data to Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Data Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "Webhook": [
+      {
+        "headers": {
+          "accept": "application/json, text/plain, */*",
+          "content-type": "application/json",
+          "user-agent": "axios/1.12.2",
+          "content-length": "3756",
+          "accept-encoding": "gzip, compress, deflate, br",
+          "host": "n8n_main:5678",
+          "connection": "keep-alive"
+        },
+        "params": {},
+        "query": {},
+        "body": {
+          "event": "messages.upsert",
+          "instance": "finabot",
+          "data": {
+            "key": {
+              "remoteJid": "131478243533033@lid",
+              "remoteJidAlt": "5215579509775@s.whatsapp.net",
+              "fromMe": false,
+              "id": "3EB018AE53F3E10C136F29",
+              "participant": "",
+              "addressingMode": "lid"
+            },
+            "pushName": "FINABOT",
+            "status": "DELIVERY_ACK",
+            "message": {
+              "audioMessage": {
+                "url": "https://mmg.whatsapp.net/v/t62.7117-24/554498108_3046270685560083_2241205790446286168_n.enc?ccb=11-4&oh=01_Q5Aa3QETsqa1LTT1ChUy6xZd58wbuMnH5SM2Dapvtw6JXN6PTA&oe=6969A091&_nc_sid=5e03e0&mms3=true",
+                "mimetype": "audio/ogg; codecs=opus",
+                "fileSha256": {
+                  "0": 75,
+                  "1": 23,
+                  "2": 240,
+                  "3": 17,
+                  "4": 59,
+                  "5": 218,
+                  "6": 21,
+                  "7": 228,
+                  "8": 129,
+                  "9": 55,
+                  "10": 182,
+                  "11": 173,
+                  "12": 231,
+                  "13": 125,
+                  "14": 30,
+                  "15": 27,
+                  "16": 24,
+                  "17": 108,
+                  "18": 231,
+                  "19": 213,
+                  "20": 48,
+                  "21": 55,
+                  "22": 209,
+                  "23": 238,
+                  "24": 75,
+                  "25": 94,
+                  "26": 89,
+                  "27": 79,
+                  "28": 1,
+                  "29": 188,
+                  "30": 221,
+                  "31": 163
+                },
+                "fileLength": {
+                  "low": 6980,
+                  "high": 0,
+                  "unsigned": true
+                },
+                "seconds": 3,
+                "ptt": true,
+                "mediaKey": {
+                  "0": 126,
+                  "1": 152,
+                  "2": 153,
+                  "3": 163,
+                  "4": 194,
+                  "5": 44,
+                  "6": 181,
+                  "7": 41,
+                  "8": 5,
+                  "9": 2,
+                  "10": 189,
+                  "11": 5,
+                  "12": 59,
+                  "13": 47,
+                  "14": 200,
+                  "15": 18,
+                  "16": 25,
+                  "17": 122,
+                  "18": 62,
+                  "19": 194,
+                  "20": 4,
+                  "21": 108,
+                  "22": 28,
+                  "23": 88,
+                  "24": 186,
+                  "25": 165,
+                  "26": 252,
+                  "27": 104,
+                  "28": 91,
+                  "29": 173,
+                  "30": 235,
+                  "31": 203
+                },
+                "fileEncSha256": {
+                  "0": 0,
+                  "1": 169,
+                  "2": 15,
+                  "3": 146,
+                  "4": 32,
+                  "5": 96,
+                  "6": 192,
+                  "7": 21,
+                  "8": 150,
+                  "9": 196,
+                  "10": 149,
+                  "11": 64,
+                  "12": 144,
+                  "13": 38,
+                  "14": 159,
+                  "15": 125,
+                  "16": 67,
+                  "17": 2,
+                  "18": 16,
+                  "19": 11,
+                  "20": 160,
+                  "21": 179,
+                  "22": 135,
+                  "23": 158,
+                  "24": 185,
+                  "25": 228,
+                  "26": 185,
+                  "27": 164,
+                  "28": 1,
+                  "29": 151,
+                  "30": 191,
+                  "31": 206
+                },
+                "directPath": "/v/t62.7117-24/554498108_3046270685560083_2241205790446286168_n.enc?ccb=11-4&oh=01_Q5Aa3QETsqa1LTT1ChUy6xZd58wbuMnH5SM2Dapvtw6JXN6PTA&oe=6969A091&_nc_sid=5e03e0",
+                "mediaKeyTimestamp": {
+                  "low": 1765947053,
+                  "high": 0,
+                  "unsigned": false
+                },
+                "contextInfo": {
+                  "mentionedJid": [],
+                  "groupMentions": [],
+                  "ephemeralSettingTimestamp": {
+                    "low": 1765774218,
+                    "high": 0,
+                    "unsigned": false
+                  },
+                  "disappearingMode": {
+                    "initiator": 0
+                  }
+                },
+                "waveform": {
+                  "0": 0,
+                  "1": 8,
+                  "2": 17,
+                  "3": 22,
+                  "4": 27,
+                  "5": 39,
+                  "6": 56,
+                  "7": 71,
+                  "8": 74,
+                  "9": 77,
+                  "10": 72,
+                  "11": 67,
+                  "12": 66,
+                  "13": 65,
+                  "14": 67,
+                  "15": 71,
+                  "16": 71,
+                  "17": 60,
+                  "18": 49,
+                  "19": 59,
+                  "20": 69,
+                  "21": 69,
+                  "22": 66,
+                  "23": 62,
+                  "24": 57,
+                  "25": 54,
+                  "26": 58,
+                  "27": 61,
+                  "28": 65,
+                  "29": 68,
+                  "30": 60,
+                  "31": 48,
+                  "32": 49,
+                  "33": 60,
+                  "34": 68,
+                  "35": 62,
+                  "36": 57,
+                  "37": 61,
+                  "38": 65,
+                  "39": 58,
+                  "40": 47,
+                  "41": 45,
+                  "42": 53,
+                  "43": 56,
+                  "44": 46,
+                  "45": 36,
+                  "46": 56,
+                  "47": 75,
+                  "48": 67,
+                  "49": 50,
+                  "50": 43,
+                  "51": 47,
+                  "52": 47,
+                  "53": 38,
+                  "54": 29,
+                  "55": 28,
+                  "56": 27,
+                  "57": 21,
+                  "58": 12,
+                  "59": 7,
+                  "60": 6,
+                  "61": 8,
+                  "62": 19,
+                  "63": 30
+                },
+                "viewOnce": false
+              },
+              "messageContextInfo": {
+                "deviceListMetadata": {
+                  "senderKeyIndexes": [],
+                  "recipientKeyIndexes": [],
+                  "senderKeyHash": {
+                    "0": 138,
+                    "1": 104,
+                    "2": 82,
+                    "3": 113,
+                    "4": 192,
+                    "5": 68,
+                    "6": 110,
+                    "7": 114,
+                    "8": 100,
+                    "9": 33
+                  },
+                  "senderTimestamp": {
+                    "low": 1765321477,
+                    "high": 0,
+                    "unsigned": true
+                  },
+                  "senderAccountType": 0,
+                  "receiverAccountType": 0,
+                  "recipientKeyHash": {
+                    "0": 73,
+                    "1": 61,
+                    "2": 132,
+                    "3": 221,
+                    "4": 74,
+                    "5": 138,
+                    "6": 31,
+                    "7": 62,
+                    "8": 78,
+                    "9": 234
+                  },
+                  "recipientTimestamp": {
+                    "low": 1765856878,
+                    "high": 0,
+                    "unsigned": true
+                  }
+                },
+                "deviceListMetadataVersion": 2,
+                "messageSecret": {
+                  "0": 126,
+                  "1": 121,
+                  "2": 124,
+                  "3": 131,
+                  "4": 53,
+                  "5": 33,
+                  "6": 216,
+                  "7": 146,
+                  "8": 184,
+                  "9": 174,
+                  "10": 120,
+                  "11": 52,
+                  "12": 60,
+                  "13": 94,
+                  "14": 28,
+                  "15": 126,
+                  "16": 218,
+                  "17": 20,
+                  "18": 229,
+                  "19": 196,
+                  "20": 104,
+                  "21": 199,
+                  "22": 171,
+                  "23": 177,
+                  "24": 121,
+                  "25": 245,
+                  "26": 49,
+                  "27": 242,
+                  "28": 76,
+                  "29": 246,
+                  "30": 63,
+                  "31": 50
+                }
+              }
+            },
+            "contextInfo": {
+              "mentionedJid": [],
+              "groupMentions": [],
+              "ephemeralSettingTimestamp": {
+                "low": 1765774218,
+                "high": 0,
+                "unsigned": false
+              },
+              "disappearingMode": {
+                "initiator": 0
+              }
+            },
+            "messageType": "audioMessage",
+            "messageTimestamp": 1765947053,
+            "instanceId": "6e1949ab-162d-4f29-8e47-5ae131e6c8f2",
+            "source": "web",
+            "chatwootMessageId": 2759,
+            "chatwootInboxId": 7,
+            "chatwootConversationId": 72
+          },
+          "destination": "http://n8n_main:5678/webhook/ccbfe362-8395-4b6b-96d3-c51da1de653f",
+          "date_time": "2025-12-17T01:50:54.089Z",
+          "sender": "5215619541045@s.whatsapp.net",
+          "server_url": "http://evolution_api:8080",
+          "apikey": "846625DD0EFD-4559-AF81-B9F39173C135"
+        },
+        "webhookUrl": "http://localhost:5678/webhook/ccbfe362-8395-4b6b-96d3-c51da1de653f",
+        "executionMode": "production"
+      }
+    ]
+  },
+  "meta": {
+    "instanceId": "a1f347db601ef8549d6d7a4c9687dcd58eb40d7bd0ce0bffc2ceddd38979b3d1"
+  }
+}

@@ -1,0 +1,262 @@
+version: "3.8"
+
+services:
+  # ============================================
+  # POSTGRES con pgvector (soporte para AI/embeddings)
+  # ============================================
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-rodrigo_db_admin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=main_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rodrigo_db_admin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - services-network
+
+  # ============================================
+  # REDIS - Cache y colas
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    command: redis-server --port 6379 --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - services-network
+
+  # ============================================
+  # N8N - Servidor Principal (UI y Webhooks)
+  # Modo Queue para mejor rendimiento
+  # ============================================
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n_main
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      # Base de datos
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_DATABASE=n8n_db
+      - DB_POSTGRESDB_USER=${POSTGRES_USER:-rodrigo_db_admin}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      # Redis para colas
+      - QUEUE_TYPE=redis
+      - QUEUE_REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      # Modo Queue - solo gestiona webhooks y cola
+      - N8N_EXECUTIONS_MODE=queue
+      # Configuración general
+      - N8N_HOST=${N8N_HOST:-0.0.0.0}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - GENERIC_TIMEZONE=America/Mexico_City
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - WEBHOOK_URL=http://${SERVER_IP}:5678/
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - services-network
+
+  # ============================================
+  # N8N Worker - Ejecuta las tareas de la cola
+  # ============================================
+  n8n_worker:
+    image: n8nio/n8n:latest
+    container_name: n8n_worker_1
+    restart: always
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_DATABASE=n8n_db
+      - DB_POSTGRESDB_USER=${POSTGRES_USER:-rodrigo_db_admin}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - QUEUE_TYPE=redis
+      - QUEUE_REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      # Modo Worker - solo ejecuta tareas
+      - N8N_EXECUTIONS_MODE=worker
+      - GENERIC_TIMEZONE=America/Mexico_City
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      n8n:
+        condition: service_started
+    networks:
+      - services-network
+
+  # ============================================
+  # EVOLUTION API - WhatsApp API
+  # ============================================
+  evolution_api:
+    image: evoapicloud/evolution-api:latest
+    container_name: evolution_api
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_TYPE=http
+      - SERVER_PORT=8080
+      - SERVER_URL=http://${SERVER_IP}:8080
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
+      # Chatwoot integration
+      - CHATWOOT_ENABLED=true
+      - CHATWOOT_MESSAGE_READ=true
+      - CHATWOOT_MESSAGE_DELETE=true
+      # PostgreSQL
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://${POSTGRES_USER:-rodrigo_db_admin}:${POSTGRES_PASSWORD}@postgres:5432/evolution_db
+      # Redis
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://:${REDIS_PASSWORD}@redis:6379/6
+      - CACHE_REDIS_TTL=604800
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - CACHE_REDIS_SAVE_INSTANCES=false
+      # WebSocket
+      - WEBSOCKET_ENABLED=true
+      - WEBSOCKET_GLOBAL_EVENTS=true
+    volumes:
+      - evolution_instances:/evolution/instances
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - services-network
+
+  # ============================================
+  # CHATWOOT - Plataforma de mensajería (Web UI)
+  # ============================================
+  chatwoot:
+    image: chatwoot/chatwoot:latest
+    container_name: chatwoot
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - FRONTEND_URL=http://${SERVER_IP}:3000
+      - NODE_ENV=production
+      - RAILS_ENV=production
+      - INSTALLATION_ENV=docker
+      - DEFAULT_LOCALE=es
+      # Base de Datos
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USERNAME=${POSTGRES_USER:-rodrigo_db_admin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DATABASE=chatwoot_production
+      # Redis (DB 1 para separar de n8n)
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/1
+      # Seguridad
+      - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY}
+      # Email
+      - MAILER_SENDER_EMAIL=${MAILER_SENDER_EMAIL:-noreply@localhost}
+      - SMTP_DOMAIN=${SMTP_DOMAIN:-localhost}
+      - SMTP_ADDRESS=${SMTP_ADDRESS:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_AUTHENTICATION=plain
+      - SMTP_ENABLE_STARTTLS_AUTO=true
+    command: ['sh', '-c', 'rm -f /app/tmp/pids/server.pid && bundle exec rails s -p 3000 -b 0.0.0.0']
+    volumes:
+      - chatwoot_data:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - services-network
+
+  # ============================================
+  # CHATWOOT Worker (Procesamiento en segundo plano)
+  # ============================================
+  chatwoot_worker:
+    image: chatwoot/chatwoot:latest
+    container_name: chatwoot_worker
+    restart: always
+    environment:
+      - FRONTEND_URL=http://${SERVER_IP}:3000
+      - NODE_ENV=production
+      - RAILS_ENV=production
+      - INSTALLATION_ENV=docker
+      - DEFAULT_LOCALE=es
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USERNAME=${POSTGRES_USER:-rodrigo_db_admin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DATABASE=chatwoot_production
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/1
+      - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY}
+      - MAILER_SENDER_EMAIL=${MAILER_SENDER_EMAIL:-noreply@localhost}
+      - SMTP_DOMAIN=${SMTP_DOMAIN:-localhost}
+    command: ['bundle', 'exec', 'sidekiq', '-C', 'config/sidekiq.yml']
+    volumes:
+      - chatwoot_data:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - services-network
+
+  # ============================================
+  # PORTAINER - Gestión visual de Docker
+  # ============================================
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    ports:
+      - "9000:9000"
+    networks:
+      - services-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  n8n_data:
+  evolution_instances:
+  chatwoot_data:
+  portainer_data:
+
+networks:
+  services-network:
+    driver: bridge

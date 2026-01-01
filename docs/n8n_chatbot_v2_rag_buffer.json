@@ -1,0 +1,632 @@
+{
+  "name": "Chatbot Full Stack - RAG + Buffer v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbot-fullstack",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-1040, 0],
+      "id": "webhook-main",
+      "name": "Webhook Evolution API",
+      "webhookId": "chatbot-fullstack"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "filter-fromMe",
+              "leftValue": "={{ $json.body.data.key.fromMe }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-800, 0],
+      "id": "filter-own-messages",
+      "name": "¿Es mensaje propio?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "phone",
+              "name": "usuario.telefono",
+              "value": "={{ $json.body.data.key.remoteJid.replace('@s.whatsapp.net', '').replace('@lid', '').replace(/^521/, '52') }}",
+              "type": "string"
+            },
+            {
+              "id": "phone-jid",
+              "name": "usuario.remoteJid",
+              "value": "={{ $json.body.data.key.remoteJid }}",
+              "type": "string"
+            },
+            {
+              "id": "name",
+              "name": "usuario.nombre",
+              "value": "={{ $json.body.data.pushName || 'Usuario' }}",
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "name": "usuario.mensaje",
+              "value": "={{ $json.body.data.message?.conversation || $json.body.data.message?.extendedTextMessage?.text || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "message-type",
+              "name": "usuario.tipo_mensaje",
+              "value": "={{ $json.body.data.messageType }}",
+              "type": "string"
+            },
+            {
+              "id": "instance",
+              "name": "instancia",
+              "value": "={{ $json.body.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "message-id",
+              "name": "usuario.id_mensaje",
+              "value": "={{ $json.body.data.key.id }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "usuario.timestamp",
+              "value": "={{ $json.body.data.messageTimestamp }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-560, 80],
+      "id": "extract-data",
+      "name": "Extraer Datos"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-text",
+              "leftValue": "={{ $json.usuario.mensaje }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-320, 80],
+      "id": "has-text",
+      "name": "¿Tiene texto?"
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $json.usuario.telefono }}_buffer",
+        "messageData": "={{ JSON.stringify({ mensaje: $json.usuario.mensaje, timestamp: $json.usuario.timestamp, id: $json.usuario.id_mensaje }) }}",
+        "tail": true
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [-80, 80],
+      "id": "redis-push",
+      "name": "Redis: Agregar Mensaje",
+      "credentials": {
+        "redis": {
+          "id": "YOUR_REDIS_CREDENTIAL_ID",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "buffer_list",
+        "key": "={{ $('Extraer Datos').item.json.usuario.telefono }}_buffer",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [160, 80],
+      "id": "redis-get",
+      "name": "Redis: Ver Buffer",
+      "credentials": {
+        "redis": {
+          "id": "YOUR_REDIS_CREDENTIAL_ID",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Analizar el buffer para decidir qué hacer\nconst bufferList = $json.buffer_list;\nconst currentMsgId = $('Extraer Datos').item.json.usuario.id_mensaje;\nconst currentTimestamp = $('Extraer Datos').item.json.usuario.timestamp;\n\nlet messages = [];\nlet firstMsgTimestamp = currentTimestamp;\nlet firstMsgId = currentMsgId;\n\n// Parsear la lista de mensajes\nif (bufferList) {\n  if (Array.isArray(bufferList)) {\n    for (const item of bufferList) {\n      try {\n        const parsed = typeof item === 'string' ? JSON.parse(item) : item;\n        messages.push(parsed);\n      } catch (e) {}\n    }\n  } else if (typeof bufferList === 'string') {\n    try {\n      const parsed = JSON.parse(bufferList);\n      messages.push(parsed);\n    } catch (e) {}\n  }\n}\n\n// Ordenar por timestamp\nmessages.sort((a, b) => a.timestamp - b.timestamp);\n\n// Obtener el primer mensaje (el más antiguo)\nif (messages.length > 0) {\n  firstMsgTimestamp = messages[0].timestamp;\n  firstMsgId = messages[0].id;\n}\n\n// Calcular tiempo transcurrido desde el primer mensaje\nconst now = Math.floor(Date.now() / 1000);\nconst elapsedSeconds = now - firstMsgTimestamp;\n\n// ¿Este es el mensaje que inició el buffer?\nconst isFirstMessage = (currentMsgId === firstMsgId);\n\n// ¿Ya pasaron 15 segundos desde el primer mensaje?\nconst timeoutReached = elapsedSeconds >= 15;\n\nreturn [{\n  json: {\n    action: isFirstMessage ? (timeoutReached ? 'process' : 'wait') : 'ignore',\n    messages: messages,\n    message_count: messages.length,\n    elapsed_seconds: elapsedSeconds,\n    is_first_message: isFirstMessage,\n    timeout_reached: timeoutReached,\n    debug: {\n      currentMsgId,\n      firstMsgId,\n      currentTimestamp,\n      firstMsgTimestamp,\n      now\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 80],
+      "id": "analyze-buffer",
+      "name": "Analizar Buffer"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "action-ignore",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "ignore",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Ignorar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "action-wait",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "wait",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Esperar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "action-process",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "process",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Procesar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [640, 80],
+      "id": "switch-action",
+      "name": "¿Qué hacer?"
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [880, 80],
+      "id": "wait-buffer",
+      "name": "Esperar 15s",
+      "webhookId": "wait-buffer-fullstack"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "buffer_final",
+        "key": "={{ $('Extraer Datos').item.json.usuario.telefono }}_buffer",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [1120, 80],
+      "id": "redis-get-final",
+      "name": "Redis: Obtener Todo",
+      "credentials": {
+        "redis": {
+          "id": "YOUR_REDIS_CREDENTIAL_ID",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $('Extraer Datos').item.json.usuario.telefono }}_buffer"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [1360, 80],
+      "id": "redis-delete",
+      "name": "Redis: Limpiar Buffer",
+      "credentials": {
+        "redis": {
+          "id": "YOUR_REDIS_CREDENTIAL_ID",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combinar todos los mensajes del buffer\nconst bufferFinal = $json.buffer_final;\nconst userData = $('Extraer Datos').item.json;\n\nlet messages = [];\n\nif (bufferFinal) {\n  if (Array.isArray(bufferFinal)) {\n    for (const item of bufferFinal) {\n      try {\n        const parsed = typeof item === 'string' ? JSON.parse(item) : item;\n        if (parsed.mensaje) messages.push(parsed.mensaje);\n      } catch (e) {}\n    }\n  } else if (typeof bufferFinal === 'string') {\n    try {\n      const parsed = JSON.parse(bufferFinal);\n      if (parsed.mensaje) messages.push(parsed.mensaje);\n    } catch (e) {\n      messages.push(bufferFinal);\n    }\n  }\n}\n\nconst mensajeCombinado = messages.join('\\n') || 'Hola';\n\nreturn [{\n  json: {\n    mensaje: mensajeCombinado,\n    nombre: userData.usuario.nombre,\n    telefono: userData.usuario.telefono,\n    remoteJid: userData.usuario.remoteJid,\n    instancia: userData.instancia,\n    cantidad_mensajes: messages.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1600, 80],
+      "id": "combine-messages",
+      "name": "Combinar Mensajes"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [1840, 320],
+      "id": "embeddings",
+      "name": "OpenAI Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "curso_fullstack_knowledge",
+        "toolDescription": "Usa esta herramienta para buscar información sobre el curso Full Stack con SQL Server. Contiene información sobre precios, horarios, tecnologías, módulos, instructor, requisitos, proceso de inscripción y preguntas frecuentes.",
+        "supabaseConnectionString": "={{ $env.SUPABASE_CONNECTION_STRING }}",
+        "tableName": "course_knowledge",
+        "queryName": "match_course_knowledge",
+        "topK": 5
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [2080, 320],
+      "id": "vector-store-tool",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres **FullStackBot**, el asistente virtual del curso \"Full Stack con SQL Server\" de Rodrigo Paz.\n\n### Usuario\n- **Nombre:** {{ $json.nombre }}\n- **Mensaje:** {{ $json.mensaje }}\n\n### Instrucciones\n1. USA la herramienta `curso_fullstack_knowledge` para buscar información relevante antes de responder\n2. Responde en español mexicano, de forma amigable y breve (max 200 palabras)\n3. Usa 1-2 emojis por mensaje\n4. Si preguntan por inscripción: https://rodrigopaz.space\n5. Si necesitan ayuda humana: WhatsApp +52 56 2229 3752\n6. Si preguntan algo fuera del tema del curso, redirige amablemente\n\nResponde al mensaje del usuario.",
+        "options": {
+          "systemMessage": "Eres FullStackBot, asistente del curso Full Stack con SQL Server. Siempre busca en la base de conocimiento antes de responder. Respuestas breves y útiles en español mexicano."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [1840, 80],
+      "id": "ai-agent",
+      "name": "AI Agent FullStackBot"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 500
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [1760, 320],
+      "id": "openai-model",
+      "name": "GPT-4o-mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evolution.rodrigopaz.space/message/sendText/RodrigoPazTech",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "4960104cb9470197be95a7ee15728ced334ab29c8fe43d14"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Combinar Mensajes').item.json.telefono }}\",\n  \"text\": {{ JSON.stringify($json.output) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2080, 80],
+      "id": "send-whatsapp",
+      "name": "Enviar WhatsApp"
+    }
+  ],
+  "connections": {
+    "Webhook Evolution API": {
+      "main": [
+        [
+          {
+            "node": "¿Es mensaje propio?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Es mensaje propio?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Extraer Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos": {
+      "main": [
+        [
+          {
+            "node": "¿Tiene texto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Tiene texto?": {
+      "main": [
+        [
+          {
+            "node": "Redis: Agregar Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Redis: Agregar Mensaje": {
+      "main": [
+        [
+          {
+            "node": "Redis: Ver Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Ver Buffer": {
+      "main": [
+        [
+          {
+            "node": "Analizar Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizar Buffer": {
+      "main": [
+        [
+          {
+            "node": "¿Qué hacer?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Qué hacer?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Esperar 15s",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis: Obtener Todo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar 15s": {
+      "main": [
+        [
+          {
+            "node": "Redis: Obtener Todo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Obtener Todo": {
+      "main": [
+        [
+          {
+            "node": "Redis: Limpiar Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Limpiar Buffer": {
+      "main": [
+        [
+          {
+            "node": "Combinar Mensajes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combinar Mensajes": {
+      "main": [
+        [
+          {
+            "node": "AI Agent FullStackBot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4o-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent FullStackBot",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent FullStackBot",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent FullStackBot": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "chatbot-rag-buffer-v2"
+  }
+}
