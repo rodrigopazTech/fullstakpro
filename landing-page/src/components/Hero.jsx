@@ -19,9 +19,14 @@ const Hero = () => {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.8 }}
                     >
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/10 border border-primary-500/20 mb-6">
-                            <span className="flex h-2 w-2 rounded-full bg-primary-400 animate-pulse"></span>
-                            <span className="text-primary-300 text-sm font-medium">Inicia 3 de Enero, 2026</span>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/10 border border-primary-500/20">
+                                <span className="flex h-2 w-2 rounded-full bg-primary-400 animate-pulse"></span>
+                                <span className="text-primary-300 text-sm font-medium">Masterclass: 24 de Enero, 2026</span>
+                            </div>
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20">
+                                <span className="text-red-400 text-sm font-bold">¡Últimos 9 lugares!</span>
+                            </div>
                         </div>
 
                         <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6">

@@ -1,13 +1,55 @@
 # Full Stack con SQL Server
 
-**Autor:** Rodrigo Paz  
-**Creado:** 30 de diciembre de 2025
+**Autor:** Rodrigo Paz (@rodrigopaztech)  
+**Última actualización:** 1 de enero de 2026
 
 ---
 
 ## 📚 Descripción del Curso
 
-Curso completo de Desarrollo Web Full-Stack enfocado en tecnologías modernas para crear aplicaciones web robustas y escalables.
+Curso completo de Desarrollo Web Full-Stack enfocado en tecnologías modernas para crear aplicaciones web robustas y escalables. El curso tiene una duración de 16 clases divididas en 4 módulos de 4 clases cada uno. Las clases son en vivo por Zoom con grabaciones de por vida.
+
+---
+
+## 📅 Fechas e Información de Inicio
+
+### IMPORTANTE - Próximo Inicio
+- **Masterclass de Inicio:** Sábado 24 de Enero 2026
+- **Horario Masterclass:** 9:00 AM a 12:30 PM (hora CDMX) - Sesión intensiva con breaks
+- **En la Masterclass cubrimos:** Los temas de las primeras 3 clases del Módulo 1 para acelerar tu proceso
+- **Horario Normal:** Sábados de 9:00 AM a 10:00 AM (puede extenderse a 1.5 hrs si el tema lo amerita)
+- **A partir del 31 de Enero:** Continúas con horario normal (9-10 AM)
+- **Fecha límite de inscripción:** Viernes 23 de Enero 2026
+
+### Cupos Limitados
+- **Máximo:** 12 alumnos por grupo
+- **Cupos disponibles:** 9 lugares
+
+### Calendario Módulo 1 (Enero-Febrero 2026)
+- Sábado 24 de Enero: MASTERCLASS (9:00 AM - 12:30 PM) - Clases 1, 2 y 3
+- Sábado 31 de Enero: Clase 4 (9:00 AM - 10:00 AM)
+
+---
+
+## 💰 Precios y Planes
+
+### Módulo 1: Fundamentos Web - $399 MXN (Oferta de Introducción)
+Incluye 4 clases: arquitectura cliente-servidor, servidores web, Git, PHP básico, formularios, sesiones y cookies.
+
+### Módulo 2: Base de Datos con SQL Server - $499 MXN
+Clases 5-8: SQL básico, joins, procedimientos almacenados, SSMS, conexión PHP-SQL Server.
+
+### Módulo 3: Frontend con JavaScript - $499 MXN
+Clases 9-12: JavaScript desde cero, DOM, eventos, Fetch API, ES6+, HTML5, CSS3.
+
+### Módulo 4: Bootstrap y Proyecto Final - $499 MXN
+Clases 13-16: Grid de Bootstrap, componentes, diseño responsivo, proyecto integrador.
+
+### Curso Completo (16 clases) - $1,800 MXN
+Incluye todos los módulos + certificado + proyecto revisado + 2 asesorías 1-a-1 + bonus Docker.
+Ahorro de $96 MXN comparado con módulos individuales.
+
+**Nota:** Los módulos 2, 3 y 4 se habilitan conforme avanza el curso en sus fechas correspondientes.
 
 ---
 
@@ -28,6 +70,7 @@ Curso completo de Desarrollo Web Full-Stack enfocado en tecnologías modernas pa
 - **PHP-FPM** - FastCGI Process Manager para PHP
 - **Git** - Control de versiones
 - **SQL Server Management Studio (SSMS)** - Herramienta de administración de bases de datos
+- **Docker** (Bonus curso completo) - Contenedores y despliegue
 
 ---
 
@@ -147,25 +190,24 @@ Curso completo de Desarrollo Web Full-Stack enfocado en tecnologías modernas pa
 
 ---
 
-## 📅 Calendario del Curso
+## 📅 Modalidad y Beneficios
 
-### Octubre 2025
+### Incluye:
+- Clases en vivo interactivas donde puedes preguntar en tiempo real
+- Grabaciones de por vida para que repases cuando quieras
+- Soporte vía WhatsApp para resolver dudas entre clases
+- Materiales y recursos descargables (código, slides, ejercicios)
+- Comunidad de estudiantes en grupo privado de WhatsApp
+- Acceso a todas las grabaciones de por vida
 
-| Lunes | Martes | Miércoles | Jueves | Viernes | Sábado | Domingo |
-|-------|--------|-----------|--------|---------|--------|---------|
-| -     | -      | -         | -      | -       | 04     | 05      |
-| 06    | 07     | 08        | 09     | 10      | 11     | 12      |
-| 13    | 14     | 15        | 16     | 17      | 18     | 19      |
-| 20    | 21     | 22        | 23     | 24      | 25     | 26      |
-| 27    | 28     | 29        | 30     | 31      | -      | -       |
-
-**Nota:** Esta es la propuesta de días y horarios sujeta a disponibilidad. Por favor confirmar disponibilidad para apartar el curso.
+### Garantía de Satisfacción
+Si después de la primera clase sientes que el curso no es para ti, te devolvemos el 100% de tu dinero sin hacer preguntas.
 
 ---
 
 ## 🎓 Perfil del Instructor
 
-**rodrigopaztech** - Desarrollador Web Full-Stack
+**Rodrigo Paz** (@rodrigopaztech) - Desarrollador Web Full-Stack
 
 ### Especialidades:
 - PHP Backend Development
@@ -173,44 +215,69 @@ Curso completo de Desarrollo Web Full-Stack enfocado en tecnologías modernas pa
 - JavaScript Frontend Development
 - Responsive Web Design
 - Bootstrap Framework
+- Docker/DevOps
+
+Es apasionado por enseñar programación de manera práctica, conectando todos los conceptos que en la universidad te enseñan por separado.
 
 ---
 
 ## 📌 Requisitos Previos
 
-- Conocimientos básicos de programación (recomendado)
-- Computadora con acceso a internet
-- Disposición para aprender y practicar
+- Computadora (Windows, Mac o Linux)
+- Conexión estable a internet
+- Micrófono y cámara (recomendado para interactuar)
+- Conocimientos básicos de programación (recomendado pero NO obligatorio)
+- El curso está diseñado para principiantes pero avanza a ritmo rápido
 
 ---
 
-## 🎯 Objetivos de Aprendizaje
+## 🛒 Proceso de Inscripción
 
-Al finalizar este curso, los estudiantes serán capaces de:
+1. Visita la página https://rodrigopaz.space
+2. Selecciona tu plan (Módulo 1 a $399 o Curso Completo a $1,800)
+3. Completa el formulario con tu nombre, email y teléfono
+4. Realiza el pago con Mercado Pago (acepta tarjeta de crédito/débito, OXXO, transferencia)
+5. Recibe confirmación por WhatsApp y email con los datos de acceso
 
-1. ✅ Desarrollar aplicaciones web completas usando PHP y SQL Server
-2. ✅ Crear interfaces de usuario responsivas con HTML, CSS y Bootstrap
-3. ✅ Implementar funcionalidad dinámica con JavaScript
-4. ✅ Gestionar bases de datos relacionales con SQL Server
-5. ✅ Aplicar buenas prácticas de desarrollo web
-6. ✅ Usar control de versiones con Git
-7. ✅ Desplegar aplicaciones en servidores web
+### Formas de Pago (vía Mercado Pago)
+- Tarjeta de crédito o débito (Visa, Mastercard, American Express)
+- Pago en OXXO
+- Transferencia bancaria
+- Hasta 12 meses sin intereses (dependiendo del banco)
+
+---
+
+## ❓ Preguntas Frecuentes
+
+**¿Necesito saber programar?**
+No es obligatorio, pero ayuda. El curso está diseñado para principiantes.
+
+**¿Puedo tomar solo un módulo?**
+Sí, cada módulo tiene precio individual. Recomendamos empezar desde el Módulo 1.
+
+**¿Qué pasa si no puedo asistir a una clase?**
+Todas las clases quedan grabadas y tienes acceso de por vida.
+
+**¿Dan certificado?**
+Sí, al completar el curso completo (16 clases) recibes certificado digital.
+
+**¿Hay meses sin intereses?**
+Sí, dependiendo de tu banco puedes pagar hasta en 12 meses sin intereses a través de Mercado Pago.
+
+**¿En qué horario son las clases?**
+Sábados de 9:00 AM a 10:00 AM hora de Ciudad de México. La clase puede extenderse hasta 1.5 horas si el tema lo requiere.
 
 ---
 
 ## 📞 Contacto
 
-**Usuario:** rodrigopaztech
+- **WhatsApp:** +52 56 2229 3752
+- **Instagram:** @rodrigopaztech
+- **Web:** https://rodrigopaz.space
+- **Email:** contacto@rodrigopaz.space
+- **Tiempo de respuesta:** Menor a 24 horas
 
 ---
 
-## 📝 Notas Importantes
-
-- El curso está diseñado para ser práctico y orientado a proyectos
-- Se requiere participación activa en cada clase
-- El proyecto integrador es fundamental para la evaluación final
-- Se proporcionarán recursos adicionales y material de apoyo
-
----
-
-*Este documento fue generado a partir del material del curso "Full Stack con SQL Server" por Rodrigo Paz*
+*Este documento es la fuente de verdad para el chatbot RAG del curso "Full Stack con SQL Server" por Rodrigo Paz*
+*Última actualización: 1 de enero de 2026*

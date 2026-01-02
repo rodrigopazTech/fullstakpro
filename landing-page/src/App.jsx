@@ -11,6 +11,8 @@ import Footer from './components/Footer';
 import PagoExitoso from './pages/PagoExitoso';
 import PagoFallido from './pages/PagoFallido';
 import PagoPendiente from './pages/PagoPendiente';
+import Instructor from './components/Instructor';
+import FAQ from './components/FAQ';
 
 // Componente de la Landing Page principal
 const LandingPage = () => (
@@ -21,7 +23,9 @@ const LandingPage = () => (
       <CourseStructure />
       <Schedule />
       <Bonus />
+      <Instructor />
       <Pricing />
+      <FAQ />
     </main>
     <Footer />
     <ChatWidget />

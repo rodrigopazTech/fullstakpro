@@ -43,10 +43,10 @@ const Bonus = () => {
                                 </li>
                             </ul>
 
-                            <button className="flex items-center gap-3 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all">
+                            <a href="#inscripcion" className="inline-flex items-center gap-3 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all">
                                 <PlayCircle className="w-5 h-5" />
                                 Quiero este Bonus
-                            </button>
+                            </a>
                         </div>
 
                         <div className="relative">

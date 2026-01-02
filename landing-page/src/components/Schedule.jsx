@@ -40,10 +40,14 @@ const Schedule = () => {
             isCurrentMonth = true;
         }
 
-        // Classes: Jan 3, 10, 24, 31
-        if ([3, 10, 24, 31].includes(date)) isClass = true;
-        // Break: Jan 17
-        if (date === 17) isBreak = true;
+        // Classes: Jan 24 (Masterclass), Jan 31 (Class 4)
+        // Adjust logic for Jan 2026.
+        // Jan 24 is Saturday. Jan 31 is Saturday.
+        if ([24, 31].includes(date)) isClass = true;
+        // Masterclass special highlight could be added but using same style for now
+
+        // Break: None in this short period mentioned in new truth source
+        // if (date === 17) isBreak = true; // Removing break as per source
 
         if (dayIndex < 3 && dayIndex >= 0) {
             // Dec days
@@ -61,7 +65,8 @@ const Schedule = () => {
                     Calendario <span className="text-gradient">Enero 2026</span>
                 </h2>
                 <p className="text-slate-400 mb-12">
-                    Las clases se imparten los sábados de 9:00 AM a 2:00 PM.
+                    Clases los sábados de 9:00 AM a 10:00 AM (hora CDMX). <br />
+                    <span className="text-primary-400 font-medium">Masterclass de Inicio (24 Ene): 9:00 AM - 12:30 PM</span>
                 </p>
 
                 <div className="glass-card p-8 rounded-2xl border border-white/10">
@@ -112,10 +117,10 @@ const Schedule = () => {
                     </div>
                 </div>
 
-                <div className="mt-8 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl inline-flex items-center gap-3 text-yellow-200 text-left">
+                <div className="mt-8 p-4 bg-primary-500/10 border border-primary-500/20 rounded-xl inline-flex items-center gap-3 text-primary-200 text-left">
                     <AlertCircle className="w-5 h-5 flex-shrink-0" />
                     <p className="text-sm">
-                        <strong>Nota Importante:</strong> El sábado 17 de Enero no habrá clase. El contenido se retoma el 24.
+                        <strong>Inicio:</strong> Sábado 24 de Enero con una Masterclass Intensiva.
                     </p>
                 </div>
             </div>

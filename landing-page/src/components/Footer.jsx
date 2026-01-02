@@ -1,5 +1,5 @@
 import React from 'react';
-import { Code2, Github, Twitter, Linkedin, Mail } from 'lucide-react';
+import { Code2, Github, Twitter, Linkedin, Mail, Smartphone } from 'lucide-react';
 
 const Footer = () => {
     return (
@@ -22,6 +22,12 @@ const Footer = () => {
                     </div>
 
                     <div className="flex gap-4">
+                        <a href="https://wa.me/525622293752" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-slate-800 text-slate-400 hover:bg-green-500 hover:text-white transition-all" title="WhatsApp">
+                            <Smartphone className="w-5 h-5" />
+                        </a>
+                        <a href="mailto:contacto@rodrigopaz.space" className="p-2 rounded-full bg-slate-800 text-slate-400 hover:bg-red-500 hover:text-white transition-all" title="Email">
+                            <Mail className="w-5 h-5" />
+                        </a>
                         <a href="https://github.com/rodrigopazTech" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-slate-800 text-slate-400 hover:bg-white hover:text-black transition-all">
                             <Github className="w-5 h-5" />
                         </a>

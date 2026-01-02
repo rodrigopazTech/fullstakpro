@@ -130,15 +130,25 @@ const Pricing = () => {
                     price={selectedPlan.price}
                 />
 
-                <div className="mt-12 flex justify-center gap-8 text-slate-500 grayscale opacity-60">
-                    <div className="flex items-center gap-2">
+                <div className="mt-12 flex flex-col md:flex-row justify-center gap-8 text-slate-500 opacity-80">
+                    <div className="flex items-center justify-center gap-2">
                         <Lock className="w-5 h-5" />
                         <span className="text-sm font-medium">Pagos Seguros vía Mercado Pago</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center gap-2">
                         <ShieldCheck className="w-5 h-5" />
-                        <span className="text-sm font-medium">Garantía de Satisfacción</span>
+                        <span className="text-sm font-medium">Garantía de Satisfacción (100% Devolución)</span>
                     </div>
+                    <div className="flex items-center justify-center gap-2">
+                        <Smartphone className="w-5 h-5" />
+                        <span className="text-sm font-medium">Tarjeta, OXXO, 12 MSI</span>
+                    </div>
+                </div>
+
+                <div className="mt-8 text-center">
+                    <span className="inline-block px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-full text-red-400 text-sm font-bold animate-pulse">
+                        Fecha límite de inscripción: Viernes 23 de Enero
+                    </span>
                 </div>
 
                 {/* TEMPORARY TEST BUTTON */}
