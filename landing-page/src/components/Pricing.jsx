@@ -151,7 +151,7 @@ const Pricing = () => {
                     </span>
                 </div>
 
-                {/* TEMPORARY TEST BUTTON */}
+                {/* TEMPORARY TEST BUTTON - HIDDEN FOR PRODUCTION
                 <div className="mt-8 flex justify-center">
                     <button
                         onClick={() => handleOpenForm("Producto de Prueba", 20)}
@@ -160,6 +160,7 @@ const Pricing = () => {
                         [TEST] Pagar $20 MXN (Preferencia Dinámica)
                     </button>
                 </div>
+                */}
 
                 <p className="text-center text-xs text-slate-600 mt-8">
                     Al realizar el pago recibirás automáticamente el acceso a la primera clase y al material.
