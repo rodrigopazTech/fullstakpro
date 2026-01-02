@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, X, Send, Smartphone, Bot, User, Loader2 } from 'lucide-react';
+import { trackContact } from '../lib/fbPixel';
 
 // URL del webhook de n8n para el chatbot web
 const N8N_CHATBOT_WEBHOOK = import.meta.env.VITE_N8N_CHATBOT_WEBHOOK || 'https://n8n.rodrigopaz.space/webhook/chatbot-web';
@@ -20,6 +21,8 @@ const ChatWidget = () => {
     }, [messages]);
 
     const handleRedirect = () => {
+        // Track Contact event for WhatsApp redirect
+        trackContact('WhatsApp-ChatWidget');
         // Redirection to WhatsApp
         window.open(`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER}?text=Hola,%20me%20interesa%20el%20curso%20Full%20Stack.`, '_blank');
         setIsOpen(false);
@@ -35,6 +38,8 @@ const ChatWidget = () => {
     };
 
     const handleStartChat = () => {
+        // Track Contact event when user starts chatbot interaction
+        trackContact('Chatbot-Web');
         // Initialize chat with welcome message - NO form required
         setMessages([
             {
