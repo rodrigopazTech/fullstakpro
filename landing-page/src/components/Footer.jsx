@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Code2, Github, Twitter, Linkedin, Mail, Smartphone } from 'lucide-react';
 
 const Footer = () => {
@@ -19,6 +20,9 @@ const Footer = () => {
                     <div className="text-slate-500 text-sm text-center md:text-right">
                         <p>&copy; 2026 Rodrigo Paz. Todos los derechos reservados.</p>
                         <p className="mt-2">Desarrollado con React + Tailwind + Amor por el código.</p>
+                        <Link to="/privacidad" className="mt-2 inline-block text-primary-400 hover:text-primary-300 hover:underline">
+                            Política de Privacidad
+                        </Link>
                     </div>
 
                     <div className="flex gap-4">

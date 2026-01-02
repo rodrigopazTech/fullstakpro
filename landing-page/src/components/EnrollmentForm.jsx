@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { Wallet } from '@mercadopago/sdk-react';
+import { trackInitiateCheckout, trackLead } from '../lib/fbPixel';
 
 const EnrollmentForm = ({ isOpen, onClose, plan, price }) => {
     const [step, setStep] = useState('form'); // form, creating_preference, payment, error
@@ -20,6 +21,13 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price }) => {
 
     // URL de la Edge Function de Supabase
     const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-preference`;
+
+    // Track InitiateCheckout when form opens
+    useEffect(() => {
+        if (isOpen && plan && price) {
+            trackInitiateCheckout(plan, price);
+        }
+    }, [isOpen, plan, price]);
 
     const resetForm = () => {
         setStep('form');
@@ -68,6 +76,9 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price }) => {
             const newEnrollmentId = enrollmentData.id;
             setEnrollmentId(newEnrollmentId);
             console.log('Enrollment creado con ID:', newEnrollmentId);
+
+            // Track Lead event - user submitted form data
+            trackLead(plan, price);
 
             // PASO 2: Crear preferencia dinámica en Mercado Pago
             setStep('creating_preference');

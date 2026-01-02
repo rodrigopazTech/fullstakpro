@@ -2,20 +2,31 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle, ArrowLeft, Mail, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { trackPurchase } from '../lib/fbPixel';
 
 const PagoExitoso = () => {
     const [searchParams] = useSearchParams();
     const [paymentInfo, setPaymentInfo] = useState({});
+    const [purchaseTracked, setPurchaseTracked] = useState(false);
 
     useEffect(() => {
         // Extraer información del pago de los query params
-        setPaymentInfo({
+        const info = {
             paymentId: searchParams.get('payment_id'),
             status: searchParams.get('status'),
             externalReference: searchParams.get('external_reference'),
             paymentType: searchParams.get('payment_type'),
-        });
-    }, [searchParams]);
+        };
+        setPaymentInfo(info);
+
+        // Track Purchase event only once
+        if (!purchaseTracked && info.paymentId && info.externalReference) {
+            // Parse external_reference to get plan and price (format: enrollmentId)
+            // The actual price tracking should ideally come from backend, but we'll track the event
+            trackPurchase('Curso Full Stack', 0, info.paymentId); // Price will be 0 as placeholder
+            setPurchaseTracked(true);
+        }
+    }, [searchParams, purchaseTracked]);
 
     return (
         <div className="min-h-screen bg-[#0B0F19] text-white flex items-center justify-center p-4">

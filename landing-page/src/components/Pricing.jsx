@@ -3,6 +3,7 @@ import { initMercadoPago } from '@mercadopago/sdk-react';
 import { Check, ShieldCheck, Lock, Smartphone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import EnrollmentForm from './EnrollmentForm';
+import { trackContact } from '../lib/fbPixel';
 
 // Initialize with your Public Key
 initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY || 'APP_USR-6322cdfa-2f10-4238-b206-b04599c35109', { locale: 'es-MX' });
@@ -17,6 +18,7 @@ const Pricing = () => {
     };
 
     const handleWhatsAppLink = (plan) => {
+        trackContact('WhatsApp'); // Track Contact event
         const message = encodeURIComponent(`Hola, estoy interesado en el plan "${plan}" y me gustaría recibir el link de pago.`);
         window.open(`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER}?text=${message}`, '_blank');
     };
