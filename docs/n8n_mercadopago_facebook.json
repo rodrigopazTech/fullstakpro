@@ -1,0 +1,605 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mercadopago-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b3590356-490d-4b74-883e-50654daaa656",
+      "name": "Webhook MP",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        1968,
+        176
+      ],
+      "webhookId": "mercadopago-payments"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"received\": true }",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "c708fea5-6e27-4556-9129-49dd38ccffd7",
+      "name": "Responder 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2176,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition-payment-type",
+              "leftValue": "={{ $json.body.type }}",
+              "rightValue": "payment",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "cfcf0886-5b76-490c-bc61-cd615f70510f",
+      "name": "¿Es tipo payment?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        2176,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.mercadopago.com/v1/payments/{{ $json.body.data.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer APP_USR-6406661833643129-123014-559a4ac43d37b84a565e916c1c890131-709785790"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0293557e-7e37-4774-ab50-28fd6af0bf5b",
+      "name": "GET Payment Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2368,
+        176
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DBnP7lVKINppBvkY",
+          "name": "Mercado Pago"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-approved",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a2303d75-5976-474e-9ae7-d1079ff7d236",
+      "name": "¿Pago aprobado?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        2576,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "payment-id",
+              "name": "payment_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "enrollment-id",
+              "name": "enrollment_id",
+              "value": "={{ $json.external_reference }}",
+              "type": "string"
+            },
+            {
+              "id": "amount",
+              "name": "amount",
+              "value": "={{ $json.transaction_amount }}",
+              "type": "number"
+            },
+            {
+              "id": "payment-date",
+              "name": "payment_date",
+              "value": "={{ $json.date_approved }}",
+              "type": "string"
+            },
+            {
+              "id": "payer-email",
+              "name": "payer_email",
+              "value": "={{ $json.payer.email }}",
+              "type": "string"
+            },
+            {
+              "id": "payer-phone",
+              "name": "payer_phone",
+              "value": "={{ $json.payer.phone?.number || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9852f8fd-2c55-48dc-a915-6df10ceb8dce",
+      "name": "Extraer Datos Pago",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2768,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://iuuyvsrwncdslmsryazz.supabase.co/rest/v1/enrollments?id=eq.{{ $json.enrollment_id }}&select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1dXl2c3J3bmNkc2xtc3J5YXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MjEwMTUsImV4cCI6MjA1MTA5NzAxNX0.p_4SaBe3XlGo-93oWBNfrGbIr0_4gNpULyAiCN07q5Q"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1dXl2c3J3bmNkc2xtc3J5YXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MjEwMTUsImV4cCI6MjA1MTA5NzAxNX0.p_4SaBe3XlGo-93oWBNfrGbIr0_4gNpULyAiCN07q5Q"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7bac185e-05a5-4238-a8cb-874508559fd2",
+      "name": "GET Enrollment Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2976,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "student-name",
+              "name": "student_name",
+              "value": "={{ $json[0].full_name }}",
+              "type": "string"
+            },
+            {
+              "id": "student-email",
+              "name": "student_email",
+              "value": "={{ $json[0].email }}",
+              "type": "string"
+            },
+            {
+              "id": "student-phone",
+              "name": "student_phone",
+              "value": "={{ $json[0].phone }}",
+              "type": "string"
+            },
+            {
+              "id": "enrollment-id",
+              "name": "enrollment_id",
+              "value": "={{ $json[0].id }}",
+              "type": "string"
+            },
+            {
+              "id": "payment-id",
+              "name": "payment_id",
+              "value": "={{ $('Extraer Datos Pago').item.json.payment_id }}",
+              "type": "string"
+            },
+            {
+              "id": "amount",
+              "name": "amount",
+              "value": "={{ $('Extraer Datos Pago').item.json.amount }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d64c4eea-9ac3-4ad6-a425-7d95c0462950",
+      "name": "Combinar Datos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3168,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://iuuyvsrwncdslmsryazz.supabase.co/rest/v1/enrollments?id=eq.{{ $json.enrollment_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1dXl2c3J3bmNkc2xtc3J5YXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MjEwMTUsImV4cCI6MjA1MTA5NzAxNX0.p_4SaBe3XlGo-93oWBNfrGbIr0_4gNpULyAiCN07q5Q"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1dXl2c3J3bmNkc2xtc3J5YXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MjEwMTUsImV4cCI6MjA1MTA5NzAxNX0.p_4SaBe3XlGo-93oWBNfrGbIr0_4gNpULyAiCN07q5Q"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"payment_status\": \"approved\",\n  \"payment_id\": \"{{ $json.payment_id }}\",\n  \"payment_date\": \"{{ $now.toISO() }}\",\n  \"payment_amount\": {{ $json.amount }},\n  \"updated_at\": \"{{ $now.toISO() }}\"\n}",
+        "options": {}
+      },
+      "id": "809c166b-41ed-40b4-9af4-d26c3eeee1c0",
+      "name": "Update Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3376,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evolution.rodrigopaz.space/message/sendText/RodrigoPazTech",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "4960104cb9470197be95a7ee15728ced334ab29c8fe43d14"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Combinar Datos').item.json.student_phone }}\",\n  \"text\": \"🎉 *¡Pago Confirmado!*\\n\\nHola {{ $('Combinar Datos').item.json.student_name }},\\n\\nTu pago ha sido procesado exitosamente.\\n\\n📋 *Detalles:*\\n• Monto: ${{ $('Combinar Datos').item.json.amount }} MXN\\n• ID de Pago: {{ $('Combinar Datos').item.json.payment_id }}\\n\\n🚀 *Próximos pasos:*\\n1. Recibirás un email con acceso al material\\n2. Te agregaré al grupo de WhatsApp del curso\\n3. Masterclass de Inicio: Sábado 24 de Enero 2026 (9am-12:30pm)\\n\\n¿Tienes alguna duda? Responde este mensaje.\\n\\n¡Gracias por confiar en FullStack Pro! 🙌\"\n}",
+        "options": {}
+      },
+      "id": "3029fe83-faca-457b-84e1-97cbbdc34bed",
+      "name": "Enviar WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3568,
+        176
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8sfMthwLqBUOpZw6",
+          "name": "Evolution API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evolution.rodrigopaz.space/message/sendText/RodrigoPazTech",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "4960104cb9470197be95a7ee15728ced334ab29c8fe43d14"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"525622293752\",\n  \"text\": \"💰 *Nueva Venta - FullStack Pro*\\n\\n👤 *Alumno:* {{ $('Combinar Datos').item.json.student_name }}\\n📧 *Email:* {{ $('Combinar Datos').item.json.student_email }}\\n📱 *Teléfono:* {{ $('Combinar Datos').item.json.student_phone }}\\n\\n💵 *Monto:* ${{ $('Combinar Datos').item.json.amount }} MXN\\n🆔 *Payment ID:* {{ $('Combinar Datos').item.json.payment_id }}\\n\\n✅ Pago confirmado y procesado.\"\n}",
+        "options": {}
+      },
+      "id": "cefc5e33-dba9-45f3-9428-bda7c1abd024",
+      "name": "Notificar Admin",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3568,
+        384
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8sfMthwLqBUOpZw6",
+          "name": "Evolution API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "result-status",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "result-message",
+              "name": "message",
+              "value": "Pago procesado y notificaciones enviadas",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "41941633-7466-4271-95d7-521ff8514543",
+      "name": "Resultado Final",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4080,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v18.0/858676670091463/events",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAATZABl60dBwBQU50L6yYDs5NgQWVPbYGIW9T7YZBlcFzhJ1MrYfgrKAYWbiYcGITPGD6Ei1vGFZC0d15cGDEdRQ4jcUYT8y5KGTxXMZBTvHGIivEUfj01jEgqN3bn4DvJygKSkGEuru2MeedC8DZCEEWamCn5zyLy5WZCDeEZC3YIsZCSr1QQgsZAEoBMYBnl5ZBvBgZDZD"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": [\n    {\n      \"event_name\": \"Purchase\",\n      \"event_time\": {{ $json.event_time }},\n      \"action_source\": \"website\",\n      \"event_source_url\": \"https://rodrigopaz.space/pago-exitoso\",\n      \"user_data\": {\n        \"em\": \"{{ $json.email_hash }}\",\n        \"ph\": \"{{ $json.phone_hash }}\"\n      },\n      \"custom_data\": {\n        \"currency\": \"MXN\",\n        \"value\": {{ $json.amount }},\n        \"content_name\": \"{{ $json.content_name }}\",\n        \"content_type\": \"product\",\n        \"order_id\": \"{{ $json.payment_id }}\"\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3888,
+        -16
+      ],
+      "id": "5535e984-a7f2-456e-8980-7666f31ecfa7",
+      "name": "FB Conversion API - Purchase"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nconst email = $('Combinar Datos').item.json.student_email || '';\nconst phone = $('Combinar Datos').item.json.student_phone || '';\nconst amount = $('Combinar Datos').item.json.amount || 0;\nconst paymentId = $('Combinar Datos').item.json.payment_id || '';\n\n// Hash email (lowercase, trimmed)\nconst emailHash = email \n  ? crypto.createHash('sha256').update(email.toLowerCase().trim()).digest('hex')\n  : '';\n\n// Hash phone (only digits)\nconst phoneClean = phone.replace(/[^0-9]/g, '');\nconst phoneHash = phoneClean\n  ? crypto.createHash('sha256').update(phoneClean).digest('hex')\n  : '';\n\nreturn {\n  json: {\n    event_time: Math.floor(Date.now() / 1000),\n    email_hash: emailHash,\n    phone_hash: phoneHash,\n    amount: amount,\n    payment_id: paymentId,\n    content_name: 'Curso Full Stack'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3680,
+        -16
+      ],
+      "id": "2b01b9a7-5540-4c87-8d21-bb5fb51136d5",
+      "name": "Preparar Datos Facebook"
+    }
+  ],
+  "connections": {
+    "Webhook MP": {
+      "main": [
+        [
+          {
+            "node": "Responder 200 OK",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "¿Es tipo payment?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Es tipo payment?": {
+      "main": [
+        [
+          {
+            "node": "GET Payment Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Payment Details": {
+      "main": [
+        [
+          {
+            "node": "¿Pago aprobado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Pago aprobado?": {
+      "main": [
+        [
+          {
+            "node": "Extraer Datos Pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos Pago": {
+      "main": [
+        [
+          {
+            "node": "GET Enrollment Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Enrollment Data": {
+      "main": [
+        [
+          {
+            "node": "Combinar Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combinar Datos": {
+      "main": [
+        [
+          {
+            "node": "Update Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Supabase": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notificar Admin",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Preparar Datos Facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Resultado Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar Admin": {
+      "main": [
+        [
+          {
+            "node": "Resultado Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Datos Facebook": {
+      "main": [
+        [
+          {
+            "node": "FB Conversion API - Purchase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dc6c45a99a424e37644c05564d036aa514a46e5d9b40bdb1cd7e6cb21b6fbe9a"
+  }
+}
