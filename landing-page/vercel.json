@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/2wcl9cxrvl7dap20wlxwn6mdndad7z.html", "destination": "/2wcl9cxrvl7dap20wlxwn6mdndad7z.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
