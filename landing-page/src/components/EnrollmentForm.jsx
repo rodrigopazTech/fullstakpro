@@ -2,8 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { Wallet } from '@mercadopago/sdk-react';
+import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 import { trackInitiateCheckout, trackLead } from '../lib/fbPixel';
+
+// Inicializar MercadoPago con la PUBLIC_KEY
+initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY, {
+    locale: 'es-MX'
+});
 
 const EnrollmentForm = ({ isOpen, onClose, plan, price }) => {
     const [step, setStep] = useState('form'); // form, creating_preference, payment, error
@@ -286,11 +291,7 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price }) => {
                                     </div>
                                 </div>
 
-                                <p className="text-xs text-slate-500">
-                                    ID de inscripción: <code className="bg-slate-800 px-2 py-1 rounded">{enrollmentId}</code>
-                                </p>
-
-                                <button onClick={() => setStep('form')} className="text-sm text-slate-500 hover:text-white underline">
+                                <button onClick={() => setStep('form')} className="text-sm text-slate-500 hover:text-white underline mt-4">
                                     Volver a editar datos
                                 </button>
                             </motion.div>
