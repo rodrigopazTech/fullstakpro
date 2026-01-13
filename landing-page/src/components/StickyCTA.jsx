@@ -26,7 +26,7 @@ const StickyCTA = () => {
                     initial={{ y: 100 }}
                     animate={{ y: 0 }}
                     exit={{ y: 100 }}
-                    className="fixed bottom-0 left-0 w-full z-40 md:hidden bg-[#0B0F19]/95 backdrop-blur-lg border-t border-white/10 p-4 pb-8" // pb-8 to account for safe area on some iphones
+                    className="fixed bottom-0 left-0 w-full z-40 bg-[#0B0F19]/95 backdrop-blur-lg border-t border-white/10 p-4 pb-8" // pb-8 to account for safe area on some iphones
                 >
                     <div className="flex items-center justify-between gap-4">
                         <div className="flex flex-col">

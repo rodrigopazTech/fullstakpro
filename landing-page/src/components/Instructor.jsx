@@ -36,8 +36,8 @@ const Instructor = () => {
                                     {/* Authority Stats */}
                                     <div className="grid grid-cols-3 gap-2 border-t border-white/10 pt-4">
                                         <div>
-                                            <div className="text-xl font-bold font-mono">1.5+</div>
-                                            <div className="text-[10px] text-slate-400 uppercase">Años Exp</div>
+                                            <div className="text-xl font-bold font-mono">50+</div>
+                                            <div className="text-[10px] text-slate-400 uppercase">Proyectos</div>
                                         </div>
                                         <div>
                                             <div className="text-xl font-bold font-mono">1k+</div>

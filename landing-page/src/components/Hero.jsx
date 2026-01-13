@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Database, Server, Clock } from 'lucide-react';
+import { ArrowRight, Code, Database, Server, Smartphone, Monitor, Clock } from 'lucide-react';
+import studentCarlos from '../assets/student_carlos.jpg';
+import studentAna from '../assets/student_ana.jpg';
+import studentMiguel from '../assets/student_miguel.jpg';
 import { trackContact } from '../lib/fbPixel';
 import { trackContact as trackGA4Contact, trackCTAClick } from '../lib/googleAnalytics';
 
@@ -44,14 +47,11 @@ const Hero = () => {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.8 }}
                     >
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/10 border border-primary-500/20">
-                                <span className="flex h-2 w-2 rounded-full bg-primary-400 animate-pulse"></span>
-                                <span className="text-primary-300 text-sm font-medium">Masterclass: 24 de Enero, 2026</span>
-                            </div>
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20">
-                                <span className="text-red-400 text-sm font-bold">¡Últimos 9 lugares!</span>
-                            </div>
+                        {/* Compact Status Bar - "En Vivo" removed as requested */}
+                        <div className="inline-flex flex-wrap items-center gap-3 text-xs font-medium mb-8 bg-slate-900/50 p-2 pr-4 rounded-full border border-white/5">
+                            <span className="text-primary-300">📅 Inicia: 24 de Enero</span>
+                            <span className="w-px h-3 bg-white/10"></span>
+                            <span className="text-red-400">¡Últimos 9 cupos!</span>
                         </div>
 
                         <h1 className="text-4xl lg:text-7xl font-bold leading-tight mb-6">
@@ -89,8 +89,8 @@ const Hero = () => {
                         </div>
 
                         <div className="flex flex-wrap gap-4">
-                            <a 
-                                href="#inscripcion" 
+                            <a
+                                href="#inscripcion"
                                 onClick={() => trackCTAClick('Reservar mi Cupo', 'hero')}
                                 className="px-8 py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-lg shadow-lg shadow-primary-500/25 transition-all hover:scale-105 inline-block text-center flex-1 sm:flex-none"
                             >
@@ -119,14 +119,9 @@ const Hero = () => {
 
                         <div className="mt-10 flex items-center gap-6 text-slate-500 text-sm">
                             <div className="flex -space-x-4">
-                                {[
-                                    { id: 1, initial: 'JS' },
-                                    { id: 2, initial: 'MR' },
-                                    { id: 3, initial: 'AL' },
-                                    { id: 4, initial: 'CP' }
-                                ].map((user) => (
-                                    <div key={user.id} className="w-10 h-10 rounded-full border-2 border-[#0B0F19] bg-slate-700 flex items-center justify-center text-xs text-white font-medium">
-                                        {user.initial}
+                                {[studentCarlos, studentAna, studentMiguel].map((img, index) => (
+                                    <div key={index} className="w-10 h-10 rounded-full border-2 border-[#0B0F19] bg-slate-700 overflow-hidden">
+                                        <img src={img} alt="Estudiante" className="w-full h-full object-cover" />
                                     </div>
                                 ))}
                             </div>

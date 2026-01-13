@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import CourseStructure from './components/CourseStructure';
 import Bonus from './components/Bonus';
+import Testimonials from './components/Testimonials';
 import Pricing from './components/Pricing';
 import ChatWidget from './components/ChatWidget';
 import Footer from './components/Footer';
@@ -23,20 +24,21 @@ const LandingPage = () => {
   useTimeOnPage();
 
   return (
-  <div className="min-h-screen bg-[#0B0F19] text-white selection:bg-primary-500/30">
-    <Navbar />
-    <main>
-      <Hero />
-      <CourseStructure />
-      <Instructor />
-      <Bonus />
-      <Pricing />
-      <FAQ />
-    </main>
-    <Footer />
-    <StickyCTA />
-    <ChatWidget />
-  </div>
+    <div className="min-h-screen bg-[#0B0F19] text-white selection:bg-primary-500/30 pb-24 relative">
+      <Navbar />
+      <main>
+        <Hero />
+        <CourseStructure />
+        <Instructor />
+        <Testimonials />
+        <Pricing />
+        <Bonus />
+        <FAQ />
+      </main>
+      <Footer />
+      <StickyCTA />
+      <ChatWidget />
+    </div>
   );
 };
 

@@ -283,15 +283,21 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price }) => {
                                 <div>
                                     <h4 className="text-xl font-bold text-white mb-2">¡Datos Guardados!</h4>
                                     <p className="text-slate-400 text-sm">
-                                        Ahora puedes finalizar tu inscripción realizando el pago de forma segura.
+                                        Selecciona tu método de pago abajo (Tarjeta, Efectivo o Transferencia).
                                     </p>
                                 </div>
 
                                 <div className="bg-white p-4 rounded-xl">
                                     <div className="custom-wallet-container min-h-[50px]">
-                                        <Wallet 
-                                            initialization={{ preferenceId: preferenceId, redirectMode: 'self' }} 
-                                            customization={{ texts: { valueProp: 'security_safety' } }} 
+                                        <Wallet
+                                            initialization={{ preferenceId: preferenceId, redirectMode: 'self' }}
+                                            customization={{
+                                                texts: { action: 'pay' },
+                                                visual: {
+                                                    buttonBackground: 'black',
+                                                    borderRadius: '16px',
+                                                }
+                                            }}
                                         />
                                     </div>
                                 </div>
