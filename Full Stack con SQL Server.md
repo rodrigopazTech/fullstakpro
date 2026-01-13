@@ -1,7 +1,8 @@
 # Full Stack con SQL Server
 
 **Autor:** Rodrigo Paz (@rodrigopaztech)  
-**Última actualización:** 1 de enero de 2026
+**Última actualización:** 12 de enero de 2026  
+**Página Web:** https://rodrigopaz.space
 
 ---
 
@@ -31,25 +32,28 @@ Curso completo de Desarrollo Web Full-Stack enfocado en tecnologías modernas pa
 
 ---
 
-## 💰 Precios y Planes
+## 💰 Precio y Plan
 
-### Módulo 1: Fundamentos Web - $399 MXN (Oferta de Introducción)
-Incluye 4 clases: arquitectura cliente-servidor, servidores web, Git, PHP básico, formularios, sesiones y cookies.
+### 🔥 OFERTA DE LANZAMIENTO - Primera Generación 2026
 
-### Módulo 2: Base de Datos con SQL Server - $499 MXN
-Clases 5-8: SQL básico, joins, procedimientos almacenados, SSMS, conexión PHP-SQL Server.
+| Concepto | Valor |
+|----------|-------|
+| Precio Normal | ~~$3,500 MXN~~ |
+| **Precio de Lanzamiento** | **$999 MXN** |
+| Descuento | 70% OFF |
+| Tipo de Pago | Pago Único |
 
-### Módulo 3: Frontend con JavaScript - $499 MXN
-Clases 9-12: JavaScript desde cero, DOM, eventos, Fetch API, ES6+, HTML5, CSS3.
+### ¿Qué incluye el curso de $999 MXN?
+- ✅ Curso Completo (16 Clases en Vivo)
+- ✅ Grabaciones de por vida
+- ✅ Soporte vía WhatsApp (bot inteligente + respuesta personal de Rodrigo)
+- ✅ Revisión de CV y Portafolio
+- ✅ Proyecto Real Full Stack con CRUD para tu Portafolio
+- ✅ Bonus Sorpresa: Docker/Enterprise Environment
+- ✅ Reconocimiento de finalización (no es certificado oficial)
+- ✅ Comunidad de estudiantes en grupo privado de WhatsApp
 
-### Módulo 4: Bootstrap y Proyecto Final - $499 MXN
-Clases 13-16: Grid de Bootstrap, componentes, diseño responsivo, proyecto integrador.
-
-### Curso Completo (16 clases) - $1,800 MXN
-Incluye todos los módulos + certificado + proyecto revisado + 2 asesorías 1-a-1 + bonus Docker.
-Ahorro de $96 MXN comparado con módulos individuales.
-
-**Nota:** Los módulos 2, 3 y 4 se habilitan conforme avanza el curso en sus fechas correspondientes.
+**Nota:** Esta oferta es exclusiva para la primera generación 2026. Cupos limitados a 12 alumnos por grupo.
 
 ---
 
@@ -233,11 +237,12 @@ Es apasionado por enseñar programación de manera práctica, conectando todos l
 
 ## 🛒 Proceso de Inscripción
 
-1. Visita la página https://rodrigopaz.space
-2. Selecciona tu plan (Módulo 1 a $399 o Curso Completo a $1,800)
-3. Completa el formulario con tu nombre, email y teléfono
-4. Realiza el pago con Mercado Pago (acepta tarjeta de crédito/débito, OXXO, transferencia)
-5. Recibe confirmación por WhatsApp y email con los datos de acceso
+Tienes varias opciones para inscribirte:
+1. Visita https://rodrigopaz.space y haz clic en "Inscribirme Ahora"
+2. Pídele el link de pago al chat de la página web
+3. Escribe por WhatsApp al +52 56 2229 3752 y pide tu link de pago
+4. Realiza el pago de $999 MXN con Mercado Pago
+5. Recibes confirmación automática por WhatsApp con acceso al grupo de alumnos
 
 ### Formas de Pago (vía Mercado Pago)
 - Tarjeta de crédito o débito (Visa, Mastercard, American Express)
@@ -247,25 +252,54 @@ Es apasionado por enseñar programación de manera práctica, conectando todos l
 
 ---
 
-## ❓ Preguntas Frecuentes
+## 🌎 Público Objetivo
+
+- **País:** México exclusivamente
+- **Idioma:** Español (todo el curso, materiales y soporte)
+- **Moneda:** Pesos mexicanos (MXN)
+- **Facturación:** No emitimos facturas. El comprobante de Mercado Pago es el único documento.
+
+---
+
+## 💻 Software Necesario
+
+- **Visual Studio Code (VS Code)** - Gratuito
+- Computadora (Windows, Mac o Linux)
+- Conexión a internet estable
+- Micrófono y cámara (recomendado)
+
+**Nota:** No necesitas ningún programa de pago. Todo el software es gratuito.
+
+---
+
+## ⏰ Duración Total
+
+- **Total:** 16 clases en aproximadamente 14 semanas (3.5 meses)
+- **Masterclass inicial:** Cubre 3 clases en un solo día
+- **Después:** 1 clase cada sábado
+- **Este es el ÚNICO grupo disponible.** No hay más grupos programados.
+
+---
+
+## ❗ Preguntas Frecuentes
 
 **¿Necesito saber programar?**
-No es obligatorio, pero ayuda. El curso está diseñado para principiantes.
-
-**¿Puedo tomar solo un módulo?**
-Sí, cada módulo tiene precio individual. Recomendamos empezar desde el Módulo 1.
+No es obligatorio, pero ayuda. El curso está diseñado para principiantes, aunque avanza a un ritmo constante.
 
 **¿Qué pasa si no puedo asistir a una clase?**
-Todas las clases quedan grabadas y tienes acceso de por vida.
+Todas las clases quedan grabadas y tienes acceso de por vida a ellas para que puedas repasar cuando quieras.
 
 **¿Dan certificado?**
-Sí, al completar el curso completo (16 clases) recibes certificado digital.
+Al completar el curso completo (16 clases) recibes un reconocimiento digital de finalización. No es un certificado oficial.
 
 **¿Hay meses sin intereses?**
 Sí, dependiendo de tu banco puedes pagar hasta en 12 meses sin intereses a través de Mercado Pago.
 
 **¿En qué horario son las clases?**
 Sábados de 9:00 AM a 10:00 AM hora de Ciudad de México. La clase puede extenderse hasta 1.5 horas si el tema lo requiere.
+
+**¿Cuánto cuesta el curso?**
+El precio de lanzamiento es de $999 MXN (pago único). Es una oferta especial del 70% de descuento para la primera generación 2026.
 
 ---
 
@@ -279,5 +313,6 @@ Sábados de 9:00 AM a 10:00 AM hora de Ciudad de México. La clase puede extende
 
 ---
 
-*Este documento es la fuente de verdad para el chatbot RAG del curso "Full Stack con SQL Server" por Rodrigo Paz*
-*Última actualización: 1 de enero de 2026*
+*Este documento es la fuente de verdad para el chatbot RAG del curso "Full Stack con SQL Server" por Rodrigo Paz*  
+*Página Web: https://rodrigopaz.space*  
+*Última actualización: 12 de enero de 2026*

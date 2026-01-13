@@ -31,7 +31,6 @@ const Navbar = () => {
                         <div className="ml-10 flex items-baseline space-x-8">
                             <a href="#hero" className="hover:text-primary-400 transition-colors px-3 py-2 rounded-md text-sm font-medium">Inicio</a>
                             <a href="#temario" className="hover:text-primary-400 transition-colors px-3 py-2 rounded-md text-sm font-medium">Temario</a>
-                            <a href="#calendario" className="hover:text-primary-400 transition-colors px-3 py-2 rounded-md text-sm font-medium">Calendario</a>
                             <a href="#bonus" className="hover:text-primary-400 transition-colors px-3 py-2 rounded-md text-sm font-medium">Bonus Docker</a>
                             <a href="#inscripcion" className="bg-white text-slate-900 px-5 py-2 rounded-full font-medium hover:bg-slate-200 transition-colors">
                                 Inscribirme
@@ -58,7 +57,6 @@ const Navbar = () => {
                 >
                     <a href="#hero" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/5">Inicio</a>
                     <a href="#temario" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/5">Temario</a>
-                    <a href="#calendario" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/5">Calendario</a>
                     <a href="#bonus" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/5">Bonus Docker</a>
                     <a href="#inscripcion" className="block w-full mt-4 bg-primary-500 text-white px-5 py-3 rounded-lg font-bold text-center">
                         Inscribirme

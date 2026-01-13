@@ -148,9 +148,12 @@ const Pricing = () => {
                 </div>
             </div>
 
-            {showEnrollment && (
-                <EnrollmentForm onClose={() => setShowEnrollment(false)} planPrice={999} planTitle="Curso Full Stack Pro" />
-            )}
+            <EnrollmentForm 
+                isOpen={showEnrollment} 
+                onClose={() => setShowEnrollment(false)} 
+                plan="Curso Completo Full Stack con SQL Server (16 clases)" 
+                price={999} 
+            />
         </section>
     );
 };
