@@ -14,9 +14,15 @@ import Privacidad from './pages/Privacidad';
 import Instructor from './components/Instructor';
 import StickyCTA from './components/StickyCTA';
 import FAQ from './components/FAQ';
+import { useScrollTracking, useTimeOnPage } from './lib/useAnalyticsTracking';
 
 // Componente de la Landing Page principal
-const LandingPage = () => (
+const LandingPage = () => {
+  // Track scroll depth and time on page
+  useScrollTracking();
+  useTimeOnPage();
+
+  return (
   <div className="min-h-screen bg-[#0B0F19] text-white selection:bg-primary-500/30">
     <Navbar />
     <main>
@@ -31,7 +37,8 @@ const LandingPage = () => (
     <StickyCTA />
     <ChatWidget />
   </div>
-);
+  );
+};
 
 function App() {
   return (

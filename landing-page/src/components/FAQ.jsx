@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, HelpCircle } from 'lucide-react';
+import { trackFAQInteraction } from '../lib/googleAnalytics';
 
 const FAQ = () => {
     const questions = [
@@ -33,7 +34,9 @@ const FAQ = () => {
     const [activeIndex, setActiveIndex] = useState(null);
 
     const toggleQuestion = (index) => {
+        const isOpening = activeIndex !== index;
         setActiveIndex(activeIndex === index ? null : index);
+        trackFAQInteraction(questions[index].q, isOpening);
     };
 
     return (

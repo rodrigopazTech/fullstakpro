@@ -4,6 +4,7 @@ import { X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 import { trackInitiateCheckout, trackLead } from '../lib/fbPixel';
+import { trackInitiateCheckout as trackGA4Checkout, trackLead as trackGA4Lead, trackModalInteraction, trackFormSubmission } from '../lib/googleAnalytics';
 
 // Inicializar MercadoPago con la PUBLIC_KEY
 initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY, {
@@ -27,10 +28,12 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price }) => {
     // URL de la Edge Function de Supabase
     const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-preference`;
 
-    // Track InitiateCheckout when form opens
+    // Track InitiateCheckout when form opens (Facebook + GA4)
     useEffect(() => {
         if (isOpen && plan && price) {
             trackInitiateCheckout(plan, price);
+            trackGA4Checkout(plan, price);
+            trackModalInteraction('enrollment_form', 'open');
         }
     }, [isOpen, plan, price]);
 
@@ -82,8 +85,10 @@ const EnrollmentForm = ({ isOpen, onClose, plan, price }) => {
             setEnrollmentId(newEnrollmentId);
             console.log('Enrollment creado con ID:', newEnrollmentId);
 
-            // Track Lead event - user submitted form data
+            // Track Lead event - user submitted form data (Facebook + GA4)
             trackLead(plan, price);
+            trackGA4Lead(plan, price);
+            trackFormSubmission('enrollment_form', true);
 
             // PASO 2: Crear preferencia dinámica en Mercado Pago
             setStep('creating_preference');

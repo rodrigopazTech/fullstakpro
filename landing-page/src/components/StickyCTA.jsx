@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { trackCTAClick } from '../lib/googleAnalytics';
 
 const StickyCTA = () => {
     const [isVisible, setIsVisible] = useState(false);
@@ -37,6 +38,7 @@ const StickyCTA = () => {
                         </div>
                         <a
                             href="#inscripcion"
+                            onClick={() => trackCTAClick('Reservar Cupo', 'sticky_cta')}
                             className="flex-1 bg-primary-600 hover:bg-primary-500 text-white font-bold py-3 px-6 rounded-xl text-center shadow-lg shadow-primary-500/20"
                         >
                             Reservar Cupo

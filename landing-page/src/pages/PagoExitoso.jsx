@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle, ArrowLeft, Mail, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { trackPurchase } from '../lib/fbPixel';
+import { trackPurchase as trackGA4Purchase, trackPageView } from '../lib/googleAnalytics';
 
 const PagoExitoso = () => {
     const [searchParams] = useSearchParams();
@@ -19,11 +20,15 @@ const PagoExitoso = () => {
         };
         setPaymentInfo(info);
 
-        // Track Purchase event only once
+        // Track page view for this conversion page
+        trackPageView('/pago-exitoso', 'Pago Exitoso');
+
+        // Track Purchase event only once (Facebook + GA4)
         if (!purchaseTracked && info.paymentId && info.externalReference) {
             // Parse external_reference to get plan and price (format: enrollmentId)
             // The actual price tracking should ideally come from backend, but we'll track the event
-            trackPurchase('Curso Full Stack', 0, info.paymentId); // Price will be 0 as placeholder
+            trackPurchase('Curso Full Stack', 999, info.paymentId);
+            trackGA4Purchase('Curso Full Stack', 999, info.paymentId, info.paymentType || 'mercadopago');
             setPurchaseTracked(true);
         }
     }, [searchParams, purchaseTracked]);

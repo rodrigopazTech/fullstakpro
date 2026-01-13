@@ -2,20 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { XCircle, ArrowLeft, RefreshCw, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { trackPaymentFailure, trackPageView, trackContact } from '../lib/googleAnalytics';
 
 const PagoFallido = () => {
     const [searchParams] = useSearchParams();
     const [paymentInfo, setPaymentInfo] = useState({});
 
     useEffect(() => {
-        setPaymentInfo({
+        const info = {
             paymentId: searchParams.get('payment_id'),
             status: searchParams.get('status'),
             externalReference: searchParams.get('external_reference'),
-        });
+        };
+        setPaymentInfo(info);
+
+        // Track page view and payment failure event
+        trackPageView('/pago-fallido', 'Pago Fallido');
+        trackPaymentFailure(info.status || 'unknown', 'mercadopago');
     }, [searchParams]);
 
     const handleWhatsApp = () => {
+        trackContact('WhatsApp', 'payment_failed');
         const message = encodeURIComponent(
             `Hola, tuve un problema con mi pago. ID de operación: ${paymentInfo.paymentId || 'N/A'}`
         );

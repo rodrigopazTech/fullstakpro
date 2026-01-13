@@ -2,21 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Clock, ArrowLeft, Mail, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { trackPageView, trackContact } from '../lib/googleAnalytics';
 
 const PagoPendiente = () => {
     const [searchParams] = useSearchParams();
     const [paymentInfo, setPaymentInfo] = useState({});
 
     useEffect(() => {
-        setPaymentInfo({
+        const info = {
             paymentId: searchParams.get('payment_id'),
             status: searchParams.get('status'),
             externalReference: searchParams.get('external_reference'),
             paymentType: searchParams.get('payment_type'),
-        });
+        };
+        setPaymentInfo(info);
+
+        // Track page view for pending payment
+        trackPageView('/pago-pendiente', 'Pago Pendiente');
     }, [searchParams]);
 
     const handleWhatsApp = () => {
+        trackContact('WhatsApp', 'payment_pending');
         const message = encodeURIComponent(
             `Hola, mi pago está pendiente. ID de operación: ${paymentInfo.paymentId || 'N/A'}`
         );

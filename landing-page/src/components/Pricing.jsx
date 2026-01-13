@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Check, Shield } from 'lucide-react';
 import EnrollmentForm from './EnrollmentForm';
-import { trackContact } from '../lib/fbPixel';
-import { trackViewContent } from '../lib/fbPixel';
+import { trackContact, trackViewContent } from '../lib/fbPixel';
+import { trackViewContent as trackGA4ViewContent, trackContact as trackGA4Contact, trackCTAClick } from '../lib/googleAnalytics';
 
 const Pricing = () => {
     const [showEnrollment, setShowEnrollment] = useState(false);
@@ -16,6 +16,7 @@ const Pricing = () => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting && !hasTrackedView) {
                         trackViewContent('Curso Full Stack - Precios', 999);
+                        trackGA4ViewContent('Curso Full Stack - Precios', 999);
                         setHasTrackedView(true);
                     }
                 });
@@ -83,6 +84,7 @@ const Pricing = () => {
                             <button
                                 onClick={() => {
                                     trackContact('WhatsApp');
+                                    trackGA4Contact('WhatsApp', 'pricing_section');
                                     window.open(`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER}?text=Hola,%20quiero%20inscribirme%20pero%20tengo%20dudas%20sobre...`, '_blank');
                                 }}
                                 className="text-primary-400 hover:text-primary-300 underline font-medium"
@@ -134,7 +136,10 @@ const Pricing = () => {
                         </ul>
 
                         <button
-                            onClick={() => setShowEnrollment(true)}
+                            onClick={() => {
+                                trackCTAClick('Inscribirme Ahora', 'pricing_card');
+                                setShowEnrollment(true);
+                            }}
                             className="w-full py-4 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white rounded-xl font-bold text-lg shadow-lg shadow-primary-500/25 transition-all transform hover:scale-[1.02]"
                         >
                             ¡Inscribirme Ahora!

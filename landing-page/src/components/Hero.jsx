@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Database, Server, Clock } from 'lucide-react';
 import { trackContact } from '../lib/fbPixel';
+import { trackContact as trackGA4Contact, trackCTAClick } from '../lib/googleAnalytics';
 
 const Hero = () => {
     const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -88,14 +89,21 @@ const Hero = () => {
                         </div>
 
                         <div className="flex flex-wrap gap-4">
-                            <a href="#inscripcion" className="px-8 py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-lg shadow-lg shadow-primary-500/25 transition-all hover:scale-105 inline-block text-center flex-1 sm:flex-none">
+                            <a 
+                                href="#inscripcion" 
+                                onClick={() => trackCTAClick('Reservar mi Cupo', 'hero')}
+                                className="px-8 py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-lg shadow-lg shadow-primary-500/25 transition-all hover:scale-105 inline-block text-center flex-1 sm:flex-none"
+                            >
                                 Reservar mi Cupo
                             </a>
                             <a
                                 href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER}?text=Hola,%20quisiera%20más%20información%20del%20curso.`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={() => trackContact('WhatsApp')}
+                                onClick={() => {
+                                    trackContact('WhatsApp');
+                                    trackGA4Contact('WhatsApp', 'hero');
+                                }}
                                 className="px-8 py-4 bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/20 text-[#25D366] rounded-xl font-medium text-lg transition-all inline-block text-center flex-1 sm:flex-none"
                             >
                                 Chat en WhatsApp
