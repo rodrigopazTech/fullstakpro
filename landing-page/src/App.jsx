@@ -3,7 +3,6 @@ import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import CourseStructure from './components/CourseStructure';
-import Schedule from './components/Schedule';
 import Bonus from './components/Bonus';
 import Pricing from './components/Pricing';
 import ChatWidget from './components/ChatWidget';
@@ -13,6 +12,7 @@ import PagoFallido from './pages/PagoFallido';
 import PagoPendiente from './pages/PagoPendiente';
 import Privacidad from './pages/Privacidad';
 import Instructor from './components/Instructor';
+import StickyCTA from './components/StickyCTA';
 import FAQ from './components/FAQ';
 
 // Componente de la Landing Page principal
@@ -22,13 +22,13 @@ const LandingPage = () => (
     <main>
       <Hero />
       <CourseStructure />
-      <Schedule />
-      <Bonus />
       <Instructor />
+      <Bonus />
       <Pricing />
       <FAQ />
     </main>
     <Footer />
+    <StickyCTA />
     <ChatWidget />
   </div>
 );

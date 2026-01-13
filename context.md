@@ -1,7 +1,31 @@
-Crea una propuesta de valor clara que describa este curso. El objetivo es captar estudiantes de programacion que desean reforzar su conocimiento o que desean aprender de manera practica los temas teoricos que han aprendido en la escuela. El problema es que en la universidad vez distintos temas pero en materias separadas y no entiendes como se conectan entre si para poder crear un proyecto . 
+# Contexto del Proyecto - Curso Full Stack con SQL Server
 
-Como es un curso para estudiantes deseo dividirlo en 4 modulos de 4 clases cada uno . Cada modulo tien un costo de 499 , excepto el primero que tiene un costo de 399 para que "Pruebes y aprendas en 1 mes lo que te llavaria 1 año". El descuento de precio para el primer mes es para captar mas clientes. 
+## Propuesta de Valor
+Curso práctico para estudiantes de programación que desean reforzar su conocimiento o aprender de manera práctica los temas teóricos que han aprendido en la escuela. El problema que resolvemos es que en la universidad ves distintos temas pero en materias separadas y no entiendes cómo se conectan entre sí para poder crear un proyecto real.
 
-El programa que planteo en la presentacion divide el curso en 16 clases pero no define claramente de que trata cada modulo , por lo que deberas identificar que temas se ven cada 4 clases y darle un nombre a cada modulo. Esto hara mas atractivo al curso debido a que el cliente tendra la opcion de inscribirse al curso en el modulo que mayor interes tenga. Sin embargo el curso esta estructurado para que aprendas de 0 los temas por lo que se recomienda coemnzar desde le modulo 1. 
+## Estructura del Curso
+- **16 clases** divididas en 4 módulos de 4 clases cada uno
+- **Modalidad:** Clases en vivo por Zoom + Grabaciones de por vida
+- **Horario:** Sábados de 9:00 AM a 2:00 PM (hora CDMX)
+- **Fecha de inicio:** 24 de Enero 2026
 
-Deberas entregarme la propuesta de valor del curso completo . El nombre de cada modulo y su propuesta de valor de cada modulo . Sugiereme 3 maneras en las que me puedes ayudar a prospectar los clientes. 
+## Precio (Actualizado Enero 2026)
+- **Precio de lanzamiento:** $999 MXN (pago único)
+- **Precio normal:** $3,500 MXN
+- **Descuento:** 70% OFF
+- **El curso se vende completo** - No hay opción de módulos separados
+- **Incluye:** Acceso de por vida a grabaciones + Soporte WhatsApp + Bonus Docker
+
+## Módulos
+1. **Fundamentos Web** (Clases 1-4): Nginx, PHP, HTTP, Git
+2. **Base de Datos** (Clases 5-8): SQL Server, SSMS, Queries avanzadas
+3. **Frontend** (Clases 9-12): JavaScript, DOM, AJAX, ES6+
+4. **Bootstrap y Proyecto** (Clases 13-16): Diseño responsivo, proyecto integrador
+
+## Tecnologías
+PHP, SQL Server, JavaScript, HTML5, CSS3, Bootstrap, Nginx, Docker
+
+## Contacto
+- Web: https://rodrigopaz.space
+- WhatsApp: +52 56 2229 3752
+- Instagram: @rodrigopaztech 

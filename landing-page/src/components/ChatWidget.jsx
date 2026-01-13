@@ -1,10 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Smartphone, Bot, User, Loader2 } from 'lucide-react';
+import { X, Send, Smartphone, Bot, User, Loader2 } from 'lucide-react';
 import { trackContact } from '../lib/fbPixel';
 
 // URL del webhook de n8n para el chatbot web
 const N8N_CHATBOT_WEBHOOK = import.meta.env.VITE_N8N_CHATBOT_WEBHOOK || 'https://n8n.rodrigopaz.space/webhook/chatbot-web';
+
+const WhatsAppIcon = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className={className}
+        xmlns="http://www.w3.org/2000/svg"
+    >
+        <path d="M17.472 14.382C17.153 14.078 15.905 13.565 15.809 13.559C15.932 13.784 16.035 14.088 15.655 14.542C15.228 15.051 14.73 15.021 14.332 14.869C12.396 14.131 9.94698 12.164 9.07198 10.879C8.94898 10.697 8.32998 9.771 8.86898 9.133C9.07698 8.887 9.27898 8.641 9.53998 8.441C9.69298 8.324 9.87198 8.163 9.45698 7.152C9.03298 6.12 8.71898 5.393 8.36998 5.385C7.99598 5.378 7.64098 5.405 7.14398 5.669C6.54198 5.989 5.86998 6.88 5.88598 8.368C5.90698 10.033 7.02598 11.967 8.14098 13.238C11.523 17.087 15.286 17.801 16.485 17.266C17.202 16.946 17.458 15.69 17.701 15.118C17.896 14.659 17.808 14.704 17.472 14.382ZM12.006 2C6.48798 2 2 6.488 2 12.006C2 13.766 2.47398 15.424 3.32498 16.865L2.35698 21.056L6.72198 19.996C8.26198 21.258 10.061 22.012 12.006 22.012C17.525 22.012 22.012 17.524 22.012 12.006C22.012 6.488 17.525 2 12.006 2Z" />
+    </svg>
+);
 
 const ChatWidget = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -200,31 +211,28 @@ const ChatWidget = () => {
                                                 className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
                                             >
                                                 <div className={`flex items-end gap-2 max-w-[85%] ${msg.type === 'user' ? 'flex-row-reverse' : ''}`}>
-                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                                        msg.type === 'user' ? 'bg-primary-600' : 'bg-slate-700'
-                                                    }`}>
+                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${msg.type === 'user' ? 'bg-primary-600' : 'bg-slate-700'
+                                                        }`}>
                                                         {msg.type === 'user' ? (
                                                             <User className="w-3 h-3 text-white" />
                                                         ) : (
                                                             <Bot className="w-3 h-3 text-primary-400" />
                                                         )}
                                                     </div>
-                                                    <div className={`rounded-2xl px-4 py-2.5 ${
-                                                        msg.type === 'user' 
-                                                            ? 'bg-primary-600 text-white rounded-br-sm' 
+                                                    <div className={`rounded-2xl px-4 py-2.5 ${msg.type === 'user'
+                                                            ? 'bg-primary-600 text-white rounded-br-sm'
                                                             : 'bg-slate-800 text-slate-200 rounded-bl-sm'
-                                                    }`}>
-                                                        <p className="text-sm whitespace-pre-line">{msg.text}</p>
-                                                        <p className={`text-[10px] mt-1 ${
-                                                            msg.type === 'user' ? 'text-primary-200' : 'text-slate-500'
                                                         }`}>
+                                                        <p className="text-sm whitespace-pre-line">{msg.text}</p>
+                                                        <p className={`text-[10px] mt-1 ${msg.type === 'user' ? 'text-primary-200' : 'text-slate-500'
+                                                            }`}>
                                                             {formatTime(msg.timestamp)}
                                                         </p>
                                                     </div>
                                                 </div>
                                             </div>
                                         ))}
-                                        
+
                                         {/* Loading indicator */}
                                         {isLoading && (
                                             <div className="flex justify-start">
@@ -289,11 +297,11 @@ const ChatWidget = () => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-14 h-14 rounded-full bg-gradient-to-r from-primary-500 to-blue-600 shadow-lg shadow-primary-500/30 flex items-center justify-center text-white relative"
+                className="w-14 h-14 rounded-full bg-gradient-to-r from-[#25D366] to-[#128C7E] shadow-lg shadow-[#25D366]/30 flex items-center justify-center text-white relative"
             >
-                {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-7 h-7" />}
+                {isOpen ? <X className="w-6 h-6" /> : <WhatsAppIcon className="w-7 h-7" />}
                 {!isOpen && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0B0F19] animate-pulse"></span>
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-[#0B0F19] animate-pulse"></span>
                 )}
             </motion.button>
         </div>

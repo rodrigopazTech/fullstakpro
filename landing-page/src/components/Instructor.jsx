@@ -5,7 +5,7 @@ import instructorImage from '../assets/instructor.png';
 
 const Instructor = () => {
     return (
-        <section id="instructor" className="py-24 relative overflow-hidden">
+        <section id="instructor" className="py-12 md:py-24 relative overflow-hidden">
             {/* Background Element */}
             <div className="absolute right-0 top-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
 
@@ -20,7 +20,6 @@ const Instructor = () => {
                         className="relative"
                     >
                         <div className="relative z-10 rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-gradient-to-b from-slate-800 to-slate-900 p-1">
-                            {/* Placeholder for instructor image - for now using a gradient/abstract representation based on user instructions to avoid placeholders but without an actual image provided */}
                             {/* Instructor Image */}
                             <div className="aspect-[4/5] bg-slate-800 relative overflow-hidden group">
                                 <img
@@ -30,12 +29,25 @@ const Instructor = () => {
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent opacity-90" />
 
-                                <div className="relative h-full flex flex-col justify-end p-8 text-center">
-                                    <h3 className="text-2xl font-bold text-white mb-2">Rodrigo Paz</h3>
+                                <div className="relative h-full flex flex-col justify-end p-8 text-center text-white">
+                                    <h3 className="text-2xl font-bold mb-2">Rodrigo Paz</h3>
                                     <p className="text-primary-400 font-mono text-sm mb-6">@rodrigopaztech</p>
-                                    <p className="text-slate-300 text-sm italic">
-                                        "Pasión por enseñar programación de manera práctica, conectando los puntos que la teoría olvida."
-                                    </p>
+
+                                    {/* Authority Stats */}
+                                    <div className="grid grid-cols-3 gap-2 border-t border-white/10 pt-4">
+                                        <div>
+                                            <div className="text-xl font-bold font-mono">1.5+</div>
+                                            <div className="text-[10px] text-slate-400 uppercase">Años Exp</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-xl font-bold font-mono">1k+</div>
+                                            <div className="text-[10px] text-slate-400 uppercase">Alumnos</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-xl font-bold font-mono">3k+</div>
+                                            <div className="text-[10px] text-slate-400 uppercase">Comunidad</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

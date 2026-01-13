@@ -2,11 +2,12 @@
 
 ## Información General del Curso
 
-**Nombre:** Full Stack con SQL Server
+**Nombre:** Curso Full Stack con SQL Server
 **Instructor:** Rodrigo Paz (@rodrigopaztech)
 **Modalidad:** Clases en vivo por Zoom + Grabaciones de por vida
 **Duración Total:** 16 clases (80 horas aproximadamente)
 **Estructura:** 4 módulos de 4 clases cada uno
+**Fecha de inicio:** 24 de Enero 2026
 
 ---
 
@@ -16,39 +17,38 @@
 **Horario:** 9:00 AM a 2:00 PM (Hora de Ciudad de México, GMT-6)
 **Duración por clase:** 5 horas
 
-### Calendario Enero 2026 - Módulo 1
-- **Clase 1:** Sábado 3 de Enero 2026
-- **Clase 2:** Sábado 10 de Enero 2026
-- **Descanso:** Sábado 17 de Enero 2026 (NO HAY CLASE)
-- **Clase 3:** Sábado 24 de Enero 2026
-- **Clase 4:** Sábado 31 de Enero 2026
+### Calendario 2026
+- **Clase 1:** Sábado 24 de Enero 2026
+- **Clase 2:** Sábado 31 de Enero 2026
+- **Y así sucesivamente cada sábado...**
+
+El curso completo dura aproximadamente 4 meses (16 sábados).
 
 ---
 
-## Precios y Planes de Pago
+## Precio y Oferta Actual (Enero 2026)
 
-### Módulo 1: Fundamentos Web
-- **Precio:** $399 MXN (precio especial de introducción)
-- **Incluye:** 4 clases + grabaciones + materiales + soporte WhatsApp
+### Precio de Lanzamiento - Primera Generación
+- **Precio:** $999 MXN (pago único)
+- **Precio normal:** $3,500 MXN
+- **Descuento:** 70% OFF
+- **Cupos disponibles:** Solo 9 lugares
 
-### Módulos 2, 3 y 4
-- **Precio por módulo:** $499 MXN cada uno
-- **Incluye:** 4 clases + grabaciones + materiales + soporte WhatsApp
-
-### Curso Completo (16 clases)
-- **Precio:** $1,800 MXN (ahorras $196)
-- **Incluye todo lo anterior más:**
-  - Certificado de finalización
-  - Proyecto integrador revisado por el instructor
-  - 2 sesiones de asesoría 1 a 1
-  - Bonus: Módulo de Docker incluido
+### ¿Qué incluye el curso completo?
+- ✅ 16 clases en vivo (cada sábado)
+- ✅ Grabaciones de por vida
+- ✅ Soporte personalizado por WhatsApp
+- ✅ Materiales y código fuente
+- ✅ Proyecto real para tu portafolio
+- ✅ Revisión de CV
+- ✅ Bonus: Módulo de Docker/Entornos Empresariales
+- ✅ Garantía de satisfacción 7 días
 
 ### Formas de Pago
-- Tarjeta de crédito o débito (Visa, Mastercard, American Express)
+- Tarjeta de crédito o débito (con/sin MSI según tu banco)
 - Pago en OXXO
 - Transferencia bancaria
 - Mercado Pago (pagos seguros con SSL)
-- Meses sin intereses disponibles según tu banco
 
 ---
 
@@ -157,17 +157,15 @@
 
 ## Beneficios del Curso
 
-### Lo que incluye tu inscripción
+### Lo que incluye tu inscripción ($999 MXN)
 1. **Clases en vivo interactivas** - Pregunta en tiempo real
 2. **Grabaciones de por vida** - Repasa cuando quieras
 3. **Soporte vía WhatsApp** - Resuelve dudas entre clases
 4. **Materiales y recursos** - Código, slides, ejercicios
 5. **Comunidad de estudiantes** - Grupo privado de WhatsApp
-
-### Beneficios adicionales (Curso Completo)
 6. **Certificado de finalización** - Acredita tus conocimientos
 7. **Proyecto integrador revisado** - Feedback personalizado
-8. **Asesoría 1 a 1** - 2 sesiones de 30 minutos con el instructor
+8. **Bonus: Módulo de Docker** - Entornos empresariales reales
 
 ---
 
@@ -175,9 +173,9 @@
 
 ### Paso a paso
 1. **Visita la página:** https://rodrigopaz.space
-2. **Selecciona tu plan:** Módulo 1 ($399) o Curso Completo ($1,800)
+2. **Haz clic en:** "Inscribirme Ahora"
 3. **Completa el formulario:** Nombre, email y teléfono
-4. **Realiza el pago:** Mercado Pago acepta múltiples métodos
+4. **Realiza el pago:** $999 MXN via Mercado Pago
 5. **Recibe confirmación:** WhatsApp y email con los datos de acceso
 
 ### ¿Tienes dudas?
@@ -212,10 +210,10 @@ Apasionado por enseñar programación de manera práctica, conectando todos los 
 ## Preguntas Frecuentes (FAQ)
 
 ### ¿Necesito saber programar?
-No es obligatorio, pero ayuda. El curso está diseñado para principiantes pero avanza rápido.
+No es obligatorio, pero ayuda. El curso está diseñado para principiantes pero avanza a buen ritmo.
 
 ### ¿Puedo tomar solo un módulo?
-Sí, cada módulo tiene un precio individual. Recomendamos empezar desde el Módulo 1.
+No, actualmente el curso se vende completo (16 clases) por $999 MXN. Es mejor valor y garantiza que aprendas todo el stack.
 
 ### ¿Qué pasa si no puedo asistir a una clase?
 Todas las clases quedan grabadas y tienes acceso de por vida.
@@ -224,7 +222,7 @@ Todas las clases quedan grabadas y tienes acceso de por vida.
 Sí, al completar el curso completo (16 clases) recibes certificado digital.
 
 ### ¿Hay meses sin intereses?
-Sí, dependiendo de tu banco puedes pagar hasta en 12 meses sin intereses.
+Depende de tu banco. Mercado Pago ofrece MSI en tarjetas participantes.
 
 ### ¿En qué horario son las clases?
 Sábados de 9:00 AM a 2:00 PM (hora de Ciudad de México).
@@ -233,7 +231,13 @@ Sábados de 9:00 AM a 2:00 PM (hora de Ciudad de México).
 Sí, Mercado Pago permite pago en OXXO.
 
 ### ¿Cuántos estudiantes hay por grupo?
-Máximo 20 estudiantes para garantizar atención personalizada.
+Solo 9 lugares disponibles para garantizar atención personalizada.
+
+### ¿Por qué $999 si normalmente cuesta $3,500?
+Es precio especial de primera generación (lanzamiento). Este descuento solo aplica para quienes se inscriban antes del 24 de enero 2026.
+
+### ¿Hay garantía?
+Sí, garantía de satisfacción 7 días. Si no te gusta, te devolvemos tu dinero.
 
 ---
 
@@ -242,4 +246,7 @@ Máximo 20 estudiantes para garantizar atención personalizada.
 - **WhatsApp:** +52 56 2229 3752
 - **Instagram:** @rodrigopaztech
 - **Web:** https://rodrigopaz.space
-- **Email:** contacto@rodrigopaz.space
+
+---
+
+*Última actualización: Enero 2026*

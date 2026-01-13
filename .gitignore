@@ -1,1 +1,3 @@
 .credentials
+.vercel
+.env*.local
