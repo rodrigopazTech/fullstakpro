@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Servicio de Base de Datos (SQL Server)
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql_server_curso
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "TuPasswordFuerte123!"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+
+  # Servicio Web (PHP + Apache + Drivers)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: php_web_curso
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    environment:
+      - DB_HOST=sqlserver, 1433
+    depends_on:
+      - sqlserver
+
+volumes:
+  sql_data:
