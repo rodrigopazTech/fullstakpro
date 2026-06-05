@@ -69,7 +69,7 @@ services:
       - PLUGINS_ENABLED=${PLUGINS_ENABLED:-true}
       - PLUGINS_DIR=/app/data/plugins
       # Security
-      - API_MASTER_KEY=${API_MASTER_KEY:-}
+      - API_MASTER_KEY=owa_test_secure_key_32_characters_long_12345
     volumes:
       - openwa-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
