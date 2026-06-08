@@ -1,0 +1,270 @@
+{
+  "name": "OpenWA RAG - Ingest Knowledge",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rag/ingest",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-ingest",
+      "name": "Webhook Ingest",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        260,
+        300
+      ],
+      "webhookId": "rag-ingest"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "title",
+              "name": "title",
+              "type": "string",
+              "value": "={{String($json.body.title || 'Documento sin titulo').replace(/[\\u00A0\\u2007\\u202F]/g, ' ').replace(/\\s+/g, ' ').trim()}}"
+            },
+            {
+              "id": "source",
+              "name": "source",
+              "type": "string",
+              "value": "={{String($json.body.source || 'manual').replace(/[\\u00A0\\u2007\\u202F]/g, ' ').replace(/\\s+/g, ' ').trim()}}"
+            },
+            {
+              "id": "content",
+              "name": "content",
+              "type": "string",
+              "value": "={{String($json.body.content || '').replace(/[\\u00A0\\u2007\\u202F]/g, ' ').replace(/\\s+/g, ' ').trim()}}"
+            },
+            {
+              "id": "document",
+              "name": "document",
+              "type": "string",
+              "value": "={{('Titulo: ' + String($json.body.title || 'Documento sin titulo').replace(/[\\u00A0\\u2007\\u202F]/g, ' ').replace(/\\s+/g, ' ').trim() + '\\nFuente: ' + String($json.body.source || 'manual').replace(/[\\u00A0\\u2007\\u202F]/g, ' ').replace(/\\s+/g, ' ').trim() + '\\n\\n' + String($json.body.content || '').replace(/[\\u00A0\\u2007\\u202F]/g, ' ').replace(/\\s+/g, ' ').trim())}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize-ingest",
+      "name": "Normalize Ingest Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-content",
+              "leftValue": "={{$json.content}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "validate-ingest",
+      "name": "Validate Content",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/embeddings",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={\"Authorization\":\"Bearer REPLACE_WITH_OPENAI_API_KEY\",\"Content-Type\":\"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{JSON.stringify({model:'text-embedding-3-small', input:$json.document})}}",
+        "options": {}
+      },
+      "id": "create-embedding",
+      "name": "Create Embedding",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1020,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const embedding = $json.data?.[0]?.embedding;\nif (!Array.isArray(embedding) || !embedding.length) {\n  throw new Error('OpenAI no devolvio embedding');\n}\nconst source = $('Normalize Ingest Payload').item.json;\nreturn [{\n  json: {\n    title: source.title,\n    source: source.source,\n    document: source.document,\n    metadataJson: JSON.stringify({ title: source.title, source: source.source }),\n    embeddingLiteral: `[${embedding.join(',')}]`\n  }\n}];"
+      },
+      "id": "prepare-sql-payload",
+      "name": "Prepare SQL Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "INSERT INTO rag_openwa_docs (text, metadata, embedding) VALUES ($1, $2::jsonb, $3::vector);",
+        "options": {
+          "queryBatching": "single",
+          "queryReplacement": "={{[$json.document, $json.metadataJson, $json.embeddingLiteral]}}",
+          "replaceEmptyStrings": false
+        }
+      },
+      "id": "postgres-insert",
+      "name": "Postgres Insert Embedding",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1520,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "e9umdgmeXA6ZXt3s",
+          "name": "Postgres PGVector Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\":true,\"stored\":true,\"title\":$json.title,\"source\":$json.source}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-ingest-success",
+      "name": "Respond Ingest Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\":false,\"error\":\"content is required\",\"example\":{\"title\":\"FAQ de envios\",\"source\":\"docs internos\",\"content\":\"Horario de soporte: lunes a viernes de 9 a 18 hrs.\"}}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "respond-ingest-error",
+      "name": "Respond Ingest Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1020,
+        480
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Ingest": {
+      "main": [
+        [
+          {
+            "node": "Normalize Ingest Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Ingest Payload": {
+      "main": [
+        [
+          {
+            "node": "Validate Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Content": {
+      "main": [
+        [
+          {
+            "node": "Create Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Ingest Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Embedding": {
+      "main": [
+        [
+          {
+            "node": "Prepare SQL Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare SQL Payload": {
+      "main": [
+        [
+          {
+            "node": "Postgres Insert Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Insert Embedding": {
+      "main": [
+        [
+          {
+            "node": "Respond Ingest Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

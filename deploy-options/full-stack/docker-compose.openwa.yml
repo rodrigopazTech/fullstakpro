@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   # ============================================
-  # POSTGRES con pgvector (soporte para AI/embeddings)
+  # POSTGRES con pgvector
   # ============================================
   postgres:
     image: pgvector/pgvector:pg15
@@ -26,7 +26,7 @@ services:
       - services-network
 
   # ============================================
-  # REDIS - Cache y colas
+  # REDIS
   # ============================================
   redis:
     image: redis:7-alpine
@@ -46,8 +46,7 @@ services:
       - services-network
 
   # ============================================
-  # N8N - Servidor Principal (UI y Webhooks)
-  # Modo Queue para mejor rendimiento
+  # N8N - UI y webhooks
   # ============================================
   n8n:
     image: n8nio/n8n:latest
@@ -56,18 +55,14 @@ services:
     ports:
       - "5678:5678"
     environment:
-      # Base de datos
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
       - DB_POSTGRESDB_DATABASE=n8n_db
       - DB_POSTGRESDB_USER=${POSTGRES_USER:-rodrigo_db_admin}
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
-      # Redis para colas
       - QUEUE_TYPE=redis
       - QUEUE_REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
-      # Modo Queue - solo gestiona webhooks y cola
       - N8N_EXECUTIONS_MODE=queue
-      # Configuración general
       - N8N_HOST=${N8N_HOST:-0.0.0.0}
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
@@ -85,7 +80,7 @@ services:
       - services-network
 
   # ============================================
-  # N8N Worker - Ejecuta las tareas de la cola
+  # N8N Worker
   # ============================================
   n8n_worker:
     image: n8nio/n8n:latest
@@ -99,7 +94,6 @@ services:
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
       - QUEUE_TYPE=redis
       - QUEUE_REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
-      # Modo Worker - solo ejecuta tareas
       - N8N_EXECUTIONS_MODE=worker
       - GENERIC_TIMEZONE=America/Mexico_City
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
@@ -116,58 +110,103 @@ services:
       - services-network
 
   # ============================================
-  # EVOLUTION API - WhatsApp API
+  # OPENWA API
+  # Nota: usa host network para evitar el bloqueo visto con bridge.
   # ============================================
-  evolution_api:
-    image: atendai/evolution-api:latest
-    container_name: evolution_api
+  openwa_api:
+    build:
+      context: ../open-wa
+      dockerfile: Dockerfile
+    container_name: openwa-api
     network_mode: host
-    restart: always
+    restart: unless-stopped
     environment:
-      - SERVER_TYPE=http
-      - SERVER_PORT=8081
-      - SERVER_URL=http://localhost:8080
-      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
-      # Swagger
-      - SKIP_SWAGGER=false
-      - SWAGGER_ENABLED=true
-      # Database
-      - DATABASE_ENABLED=true
-      - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://${POSTGRES_USER:-rodrigo_db_admin}:${POSTGRES_PASSWORD}@127.0.0.1:5432/evolution_db
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-rodrigo_db_admin}:${POSTGRES_PASSWORD}@127.0.0.1:5432/evolution_db
-      # Redis
-      - CACHE_REDIS_ENABLED=true
-      - CACHE_REDIS_URI=redis://:${REDIS_PASSWORD}@127.0.0.1:6379/6
-      - CACHE_REDIS_TTL=604800
-      - CACHE_REDIS_PREFIX_KEY=evolution
-      - CACHE_REDIS_SAVE_INSTANCES=false
-      # WebSocket
-      - WEBSOCKET_ENABLED=true
-      - WEBSOCKET_GLOBAL_EVENTS=true
-      # Additional V2 settings
-      - QRCODE_LIMIT=30
-      - CONFIG_SESSION_PHONE_CLIENT=Evolution-V2
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=2785
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - DATABASE_TYPE=sqlite
+      - DATABASE_NAME=/app/data/openwa.sqlite
+      - ENGINE_TYPE=whatsapp-web.js
+      - SESSION_DATA_PATH=/app/data/sessions
+      - PUPPETEER_HEADLESS=${PUPPETEER_HEADLESS:-true}
+      - PUPPETEER_ARGS=${PUPPETEER_ARGS:---no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu}
+      - STORAGE_TYPE=local
+      - STORAGE_LOCAL_PATH=/app/data/media
+      - REDIS_ENABLED=false
+      - WEBHOOK_TIMEOUT=${OPENWA_WEBHOOK_TIMEOUT:-10000}
+      - WEBHOOK_MAX_RETRIES=${OPENWA_WEBHOOK_MAX_RETRIES:-3}
+      - WEBHOOK_RETRY_DELAY=${OPENWA_WEBHOOK_RETRY_DELAY:-5000}
+      - RATE_LIMIT_TTL=${OPENWA_RATE_LIMIT_TTL:-60}
+      - RATE_LIMIT_MAX=${OPENWA_RATE_LIMIT_MAX:-100}
+      - PLUGINS_ENABLED=${OPENWA_PLUGINS_ENABLED:-true}
+      - PLUGINS_DIR=/app/data/plugins
+      - API_MASTER_KEY=${OPENWA_API_KEY}
     volumes:
-      - evolution_instances:/evolution/instances
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - openwa_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../open-wa/docker-compose.yml:/app/docker-compose.yml:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:2785/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
-  evolution_api_proxy:
+  # ============================================
+  # Proxy interno para que n8n alcance OpenWA
+  # ============================================
+  openwa_api_proxy:
     image: alpine/socat:latest
-    container_name: evolution_api_proxy
+    container_name: openwa_api_proxy
     restart: always
-    command: TCP-LISTEN:8080,fork,reuseaddr TCP4:172.19.0.1:8081
-    ports:
-      - "8080:8080"
+    command: TCP-LISTEN:2785,fork,reuseaddr TCP4:172.19.0.1:2785
     networks:
       - services-network
 
   # ============================================
-  # OLLAMA - Modelos locales para chat y embeddings
+  # OpenWA Dashboard
+  # ============================================
+  openwa_dashboard:
+    build:
+      context: ../open-wa/dashboard
+      dockerfile: Dockerfile.traefik
+    container_name: openwa-dashboard
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    expose:
+      - "80"
+    depends_on:
+      - openwa_api
+    networks:
+      - services-network
+
+  # ============================================
+  # Traefik para exponer el dashboard de OpenWA
+  # ============================================
+  openwa_traefik:
+    image: traefik:v3.0
+    container_name: openwa-traefik
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${DASHBOARD_PORT:-2886}:80"
+      - "127.0.0.1:${TRAEFIK_PORT:-8080}:8080"
+    volumes:
+      - ../open-wa/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ../open-wa/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+    depends_on:
+      - openwa_dashboard
+    networks:
+      - services-network
+
+  # ============================================
+  # OLLAMA
   # ============================================
   ollama:
     image: ollama/ollama:latest
@@ -187,16 +226,8 @@ services:
     networks:
       - services-network
 
-  openwa_api_proxy:
-    image: alpine/socat:latest
-    container_name: openwa_api_proxy
-    restart: always
-    command: TCP-LISTEN:2785,fork,reuseaddr TCP4:172.19.0.1:2785
-    networks:
-      - services-network
-
   # ============================================
-  # CHATWOOT - Plataforma de mensajería (Web UI)
+  # CHATWOOT
   # ============================================
   chatwoot:
     image: chatwoot/chatwoot:latest
@@ -210,16 +241,12 @@ services:
       - RAILS_ENV=production
       - INSTALLATION_ENV=docker
       - DEFAULT_LOCALE=es
-      # Base de Datos
       - POSTGRES_HOST=postgres
       - POSTGRES_USERNAME=${POSTGRES_USER:-rodrigo_db_admin}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DATABASE=chatwoot_production
-      # Redis (DB 1 para separar de n8n)
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/1
-      # Seguridad
       - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY}
-      # Email
       - MAILER_SENDER_EMAIL=${MAILER_SENDER_EMAIL:-noreply@localhost}
       - SMTP_DOMAIN=${SMTP_DOMAIN:-localhost}
       - SMTP_ADDRESS=${SMTP_ADDRESS:-}
@@ -228,7 +255,7 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - SMTP_AUTHENTICATION=plain
       - SMTP_ENABLE_STARTTLS_AUTO=true
-    command: ['sh', '-c', 'rm -f /app/tmp/pids/server.pid && bundle exec rails s -p 3000 -b 0.0.0.0']
+    command: ["sh", "-c", "rm -f /app/tmp/pids/server.pid && bundle exec rails s -p 3000 -b 0.0.0.0"]
     volumes:
       - chatwoot_data:/app/storage
     depends_on:
@@ -240,7 +267,7 @@ services:
       - services-network
 
   # ============================================
-  # CHATWOOT Worker (Procesamiento en segundo plano)
+  # CHATWOOT Worker
   # ============================================
   chatwoot_worker:
     image: chatwoot/chatwoot:latest
@@ -260,7 +287,7 @@ services:
       - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY}
       - MAILER_SENDER_EMAIL=${MAILER_SENDER_EMAIL:-noreply@localhost}
       - SMTP_DOMAIN=${SMTP_DOMAIN:-localhost}
-    command: ['bundle', 'exec', 'sidekiq', '-C', 'config/sidekiq.yml']
+    command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
     volumes:
       - chatwoot_data:/app/storage
     depends_on:
@@ -272,7 +299,7 @@ services:
       - services-network
 
   # ============================================
-  # PORTAINER - Gestión visual de Docker
+  # PORTAINER
   # ============================================
   portainer:
     image: portainer/portainer-ce:latest
@@ -291,7 +318,7 @@ volumes:
   redis_data:
   ollama_data:
   n8n_data:
-  evolution_instances:
+  openwa_data:
   chatwoot_data:
   portainer_data:
 

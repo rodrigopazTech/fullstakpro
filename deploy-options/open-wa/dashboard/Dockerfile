@@ -5,8 +5,10 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies. The lockfile currently resolves a Vite/plugin-react
+# combination that npm v10 rejects on peer-deps, so use legacy peer handling
+# for reproducible container builds.
+RUN npm ci --legacy-peer-deps
 
 # Copy source code
 COPY . .

@@ -1,0 +1,331 @@
+{
+  "name": "OpenWA RAG - Chat Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rag/chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-chat",
+      "name": "Webhook Chat",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        260,
+        300
+      ],
+      "webhookId": "rag-chat"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "question",
+              "name": "question",
+              "type": "string",
+              "value": "={{$json.body.question || $json.body.text || ''}}"
+            },
+            {
+              "id": "sessionId",
+              "name": "sessionId",
+              "type": "string",
+              "value": "={{$json.body.sessionId || $json.body.chatId || 'default-session'}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize-chat",
+      "name": "Normalize Chat Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-question",
+              "leftValue": "={{$json.question}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "validate-chat",
+      "name": "Validate Question",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.question}}",
+        "hasOutputParser": false,
+        "needsFallback": false,
+        "options": {
+          "systemMessage": "Eres un asistente para WhatsApp con RAG. Usa siempre la herramienta Knowledge Base cuando la pregunta requiera informacion factual del negocio. Si la base no contiene la respuesta, dilo de forma explicita y breve. Responde en espanol.",
+          "maxIterations": 6,
+          "returnIntermediateSteps": false,
+          "passthroughBinaryImages": true,
+          "enableStreaming": false
+        }
+      },
+      "id": "ai-agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:1b",
+        "options": {}
+      },
+      "id": "ollama-chat-model",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        120
+      ],
+      "credentials": {
+        "ollamaApi": {
+          "id": "eJR3rQztX3LdMRzo",
+          "name": "Ollama Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{'rag:' + $json.sessionId}}",
+        "sessionTTL": 604800,
+        "contextWindowLength": 12
+      },
+      "id": "redis-memory",
+      "name": "Redis Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.6,
+      "position": [
+        1020,
+        260
+      ],
+      "credentials": {
+        "redis": {
+          "id": "jG98UsOEoIof0zKf",
+          "name": "Redis Chat Memory Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text"
+      },
+      "id": "ollama-embeddings-chat",
+      "name": "Ollama Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        400
+      ],
+      "credentials": {
+        "ollamaApi": {
+          "id": "eJR3rQztX3LdMRzo",
+          "name": "Ollama Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "knowledge_base",
+        "toolDescription": "Busca respuestas en la base de conocimiento del negocio, politicas, procesos, horarios, catalogo y preguntas frecuentes. Usa esta herramienta siempre que la pregunta requiera datos concretos.",
+        "tableName": "rag_openwa_docs",
+        "topK": 4,
+        "includeDocumentMetadata": true,
+        "useReranker": false,
+        "options": {
+          "distanceStrategy": "cosine"
+        }
+      },
+      "id": "pgvector-tool",
+      "name": "Knowledge Base",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.2,
+      "position": [
+        1020,
+        540
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "e9umdgmeXA6ZXt3s",
+          "name": "Postgres PGVector Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\":true,\"answer\":$json.output,\"sessionId\":$item(0).$node[\"Normalize Chat Payload\"].json.sessionId}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-chat-success",
+      "name": "Respond Chat Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\":false,\"error\":\"question or text is required\",\"example\":{\"sessionId\":\"cliente-52155\",\"question\":\"Cual es el horario de soporte?\"}}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "respond-chat-error",
+      "name": "Respond Chat Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1020,
+        700
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Chat": {
+      "main": [
+        [
+          {
+            "node": "Normalize Chat Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Chat Payload": {
+      "main": [
+        [
+          {
+            "node": "Validate Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Question": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Chat Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Knowledge Base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Knowledge Base": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond Chat Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

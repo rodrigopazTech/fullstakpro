@@ -1,0 +1,742 @@
+{
+  "name": "OpenWA RAG - Buffer + PGVector",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## OpenWA RAG Buffer\n\nWebhook de entrada para eventos `message.received` de OpenWA.\n\nFlujo:\n1. Ignora mensajes propios\n2. Normaliza payload\n3. Acumula mensajes cortos en Redis por chat\n4. Espera 15 segundos desde el primer mensaje\n5. Combina el buffer\n6. Consulta RAG en pgvector\n7. Responde por OpenWA\n\nRequiere:\n- OpenAI credential\n- Redis Chat Memory Local\n- Postgres PGVector Local\n- Webhook configurado en OpenWA hacia `/webhook/openwa/rag-buffer/inbound`",
+        "height": 360,
+        "width": 420
+      },
+      "id": "sticky-note",
+      "name": "How It Works",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        240,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "openwa/rag-buffer/inbound",
+        "options": {}
+      },
+      "id": "webhook-openwa",
+      "name": "Webhook OpenWA",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        260,
+        420
+      ],
+      "webhookId": "openwa-rag-buffer-inbound"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "from-me",
+              "leftValue": "={{$json.body.data.fromMe}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ignore-own-message",
+      "name": "Ignore Own Message",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        500,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "event",
+              "name": "event",
+              "type": "string",
+              "value": "={{$json.body.event || 'message.received'}}"
+            },
+            {
+              "id": "session",
+              "name": "sessionId",
+              "type": "string",
+              "value": "={{$json.body.sessionId}}"
+            },
+            {
+              "id": "chat",
+              "name": "chatId",
+              "type": "string",
+              "value": "={{$json.body.data.chatId || $json.body.data.from}}"
+            },
+            {
+              "id": "from",
+              "name": "from",
+              "type": "string",
+              "value": "={{$json.body.data.from}}"
+            },
+            {
+              "id": "name",
+              "name": "contactName",
+              "type": "string",
+              "value": "={{$json.body.data.pushName || 'Usuario'}}"
+            },
+            {
+              "id": "message",
+              "name": "messageText",
+              "type": "string",
+              "value": "={{$json.body.data.body || ''}}"
+            },
+            {
+              "id": "type",
+              "name": "messageType",
+              "type": "string",
+              "value": "={{$json.body.data.type || 'text'}}"
+            },
+            {
+              "id": "message-id",
+              "name": "messageId",
+              "type": "string",
+              "value": "={{$json.body.data.id}}"
+            },
+            {
+              "id": "timestamp",
+              "name": "messageTimestamp",
+              "type": "number",
+              "value": "={{$json.body.data.timestamp || Math.floor(Date.now()/1000)}}"
+            },
+            {
+              "id": "buffer-key",
+              "name": "bufferKey",
+              "type": "string",
+              "value": "={{'openwa:buffer:' + $json.body.sessionId + ':' + ($json.body.data.chatId || $json.body.data.from)}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize-openwa-message",
+      "name": "Normalize OpenWA Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        740,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-text",
+              "leftValue": "={{$json.messageText}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "has-text",
+      "name": "Has Text",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        980,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{$json.bufferKey}}",
+        "messageData": "={{JSON.stringify({ id: $json.messageId, timestamp: $json.messageTimestamp, text: $json.messageText })}}",
+        "tail": true
+      },
+      "id": "redis-push",
+      "name": "Redis Push Message",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        500
+      ],
+      "credentials": {
+        "redis": {
+          "id": "jG98UsOEoIof0zKf",
+          "name": "Redis Chat Memory Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "buffer_list",
+        "key": "={{$json.bufferKey}}",
+        "options": {}
+      },
+      "id": "redis-get-buffer",
+      "name": "Redis Get Buffer",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1460,
+        500
+      ],
+      "credentials": {
+        "redis": {
+          "id": "jG98UsOEoIof0zKf",
+          "name": "Redis Chat Memory Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.buffer_list;\nconst currentId = $('Normalize OpenWA Message').item.json.messageId;\nconst currentTimestamp = $('Normalize OpenWA Message').item.json.messageTimestamp;\n\nconst input = Array.isArray(raw) ? raw : raw ? [raw] : [];\nconst messages = [];\nconst seen = new Set();\n\nfor (const item of input) {\n  try {\n    const parsed = typeof item === 'string' ? JSON.parse(item) : item;\n    if (!parsed?.id || seen.has(parsed.id)) continue;\n    seen.add(parsed.id);\n    messages.push(parsed);\n  } catch {}\n}\n\nmessages.sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));\n\nconst first = messages[0] || { id: currentId, timestamp: currentTimestamp };\nconst now = Math.floor(Date.now() / 1000);\nconst elapsedSeconds = now - Number(first.timestamp || currentTimestamp || now);\nconst isLeader = first.id === currentId;\n\nlet action = 'ignore';\nif (isLeader && elapsedSeconds >= 15) {\n  action = 'process';\n} else if (isLeader) {\n  action = 'wait';\n}\n\nreturn [{\n  json: {\n    action,\n    isLeader,\n    elapsedSeconds,\n    messageCount: messages.length,\n    firstMessageId: first.id,\n    currentMessageId: currentId,\n    bufferKey: $('Normalize OpenWA Message').item.json.bufferKey\n  }\n}];"
+      },
+      "id": "analyze-buffer",
+      "name": "Analyze Buffer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ignore",
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "ignore",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Ignore"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "wait",
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "wait",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Wait"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "process",
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "process",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Process"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "switch-action",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1940,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "id": "wait-15-seconds",
+      "name": "Wait 15 Seconds",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2180,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "buffer_final",
+        "key": "={{$('Normalize OpenWA Message').item.json.bufferKey}}",
+        "options": {}
+      },
+      "id": "redis-get-final",
+      "name": "Redis Get Final Buffer",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2420,
+        500
+      ],
+      "credentials": {
+        "redis": {
+          "id": "jG98UsOEoIof0zKf",
+          "name": "Redis Chat Memory Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{$('Normalize OpenWA Message').item.json.bufferKey}}"
+      },
+      "id": "redis-delete-buffer",
+      "name": "Redis Delete Buffer",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2660,
+        500
+      ],
+      "credentials": {
+        "redis": {
+          "id": "jG98UsOEoIof0zKf",
+          "name": "Redis Chat Memory Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.buffer_final;\nconst input = Array.isArray(raw) ? raw : raw ? [raw] : [];\nconst messages = [];\nconst seen = new Set();\n\nfor (const item of input) {\n  try {\n    const parsed = typeof item === 'string' ? JSON.parse(item) : item;\n    if (!parsed?.id || seen.has(parsed.id)) continue;\n    seen.add(parsed.id);\n    messages.push(parsed);\n  } catch {}\n}\n\nmessages.sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));\nconst combinedText = messages.map(m => m.text).filter(Boolean).join('\\n').trim() || $('Normalize OpenWA Message').item.json.messageText;\n\nreturn [{\n  json: {\n    sessionId: $('Normalize OpenWA Message').item.json.sessionId,\n    chatId: $('Normalize OpenWA Message').item.json.chatId,\n    contactName: $('Normalize OpenWA Message').item.json.contactName,\n    question: combinedText,\n    messageCount: messages.length || 1,\n    source: 'openwa-buffer'\n  }\n}];"
+      },
+      "id": "combine-messages",
+      "name": "Combine Buffered Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2900,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.question}}",
+        "hasOutputParser": false,
+        "needsFallback": false,
+        "options": {
+          "systemMessage": "Eres FullStackBot para WhatsApp. Responde en espanol mexicano, breve y util. Usa siempre la herramienta knowledge_base cuando la pregunta requiera datos concretos del negocio, curso, horarios, precios, politicas o soporte. Si la base no contiene la respuesta, dilo sin inventar informacion.",
+          "maxIterations": 6,
+          "returnIntermediateSteps": false,
+          "passthroughBinaryImages": true,
+          "enableStreaming": false
+        }
+      },
+      "id": "ai-agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3380,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.4,
+          "maxTokens": 400
+        }
+      },
+      "id": "openai-chat-model",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3140,
+        300
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{'openwa:rag:' + $json.chatId}}",
+        "sessionTTL": 604800,
+        "contextWindowLength": 12
+      },
+      "id": "redis-chat-memory",
+      "name": "Redis Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.6,
+      "position": [
+        3140,
+        460
+      ],
+      "credentials": {
+        "redis": {
+          "id": "jG98UsOEoIof0zKf",
+          "name": "Redis Chat Memory Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "openai-embeddings",
+      "name": "OpenAI Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3140,
+        620
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "knowledge_base",
+        "toolDescription": "Busca respuestas en la base de conocimiento del negocio, catalogo, horarios, politicas, soporte y preguntas frecuentes.",
+        "tableName": "rag_openwa_docs",
+        "topK": 4,
+        "includeDocumentMetadata": true,
+        "useReranker": false,
+        "options": {
+          "distanceStrategy": "cosine"
+        }
+      },
+      "id": "knowledge-base",
+      "name": "Knowledge Base",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.2,
+      "position": [
+        3140,
+        780
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "e9umdgmeXA6ZXt3s",
+          "name": "Postgres PGVector Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://openwa_api_proxy:2785/api/sessions/{{$json.sessionId}}/messages/send-text",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={\"X-API-Key\":\"REPLACE_WITH_OPENWA_API_KEY\",\"Content-Type\":\"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"chatId\":\"{{$item(0).$node[\\\"Combine Buffered Messages\\\"].json.chatId}}\",\"text\":\"{{$json.output}}\"}",
+        "options": {}
+      },
+      "id": "openwa-send-text",
+      "name": "OpenWA Send Text",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3620,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook OpenWA": {
+      "main": [
+        [
+          {
+            "node": "Ignore Own Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignore Own Message": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Normalize OpenWA Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize OpenWA Message": {
+      "main": [
+        [
+          {
+            "node": "Has Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Text": {
+      "main": [
+        [
+          {
+            "node": "Redis Push Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Redis Push Message": {
+      "main": [
+        [
+          {
+            "node": "Redis Get Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Get Buffer": {
+      "main": [
+        [
+          {
+            "node": "Analyze Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Buffer": {
+      "main": [
+        [
+          {
+            "node": "Switch Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait 15 Seconds",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis Get Final Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 15 Seconds": {
+      "main": [
+        [
+          {
+            "node": "Redis Get Final Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Get Final Buffer": {
+      "main": [
+        [
+          {
+            "node": "Redis Delete Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Delete Buffer": {
+      "main": [
+        [
+          {
+            "node": "Combine Buffered Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Buffered Messages": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Knowledge Base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Knowledge Base": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "OpenWA Send Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

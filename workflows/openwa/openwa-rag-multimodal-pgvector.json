@@ -1,0 +1,749 @@
+{
+  "name": "OpenWA RAG - Multimodal + PGVector",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## OpenWA RAG Multimodal\n\nVersion inspirada en tu workflow complejo.\n\nSoporta:\n- texto\n- audio\n- imagen\n\nFlujo:\n1. recibe webhook de OpenWA\n2. normaliza payload\n3. convierte audio o imagen a texto\n4. consulta RAG en pgvector\n5. responde por OpenWA en texto\n\nNota: la salida de voz se omitio a proposito para priorizar estabilidad. Si quieres TTS despues, solo falta agregar credencial de ElevenLabs u OpenAI TTS.",
+        "height": 340,
+        "width": 420
+      },
+      "id": "sticky-note",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        220,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "openwa/rag-multimodal/inbound",
+        "options": {}
+      },
+      "id": "webhook-openwa",
+      "name": "Webhook OpenWA",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        460
+      ],
+      "webhookId": "openwa-rag-multimodal-inbound"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "from-me",
+              "leftValue": "={{$json.body.data.fromMe}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ignore-own-message",
+      "name": "Ignore Own Message",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "session",
+              "name": "sessionId",
+              "type": "string",
+              "value": "={{$json.body.sessionId}}"
+            },
+            {
+              "id": "chat",
+              "name": "chatId",
+              "type": "string",
+              "value": "={{$json.body.data.chatId || $json.body.data.from}}"
+            },
+            {
+              "id": "from",
+              "name": "from",
+              "type": "string",
+              "value": "={{$json.body.data.from}}"
+            },
+            {
+              "id": "name",
+              "name": "contactName",
+              "type": "string",
+              "value": "={{$json.body.data.pushName || 'Usuario'}}"
+            },
+            {
+              "id": "message-id",
+              "name": "messageId",
+              "type": "string",
+              "value": "={{$json.body.data.id}}"
+            },
+            {
+              "id": "timestamp",
+              "name": "messageTimestamp",
+              "type": "number",
+              "value": "={{$json.body.data.timestamp || Math.floor(Date.now()/1000)}}"
+            },
+            {
+              "id": "type",
+              "name": "messageType",
+              "type": "string",
+              "value": "={{$json.body.data.type || 'text'}}"
+            },
+            {
+              "id": "text",
+              "name": "messageText",
+              "type": "string",
+              "value": "={{$json.body.data.body || ''}}"
+            },
+            {
+              "id": "media-base64",
+              "name": "mediaBase64",
+              "type": "string",
+              "value": "={{$json.body.data.media?.data || ''}}"
+            },
+            {
+              "id": "media-mime",
+              "name": "mediaMimeType",
+              "type": "string",
+              "value": "={{$json.body.data.media?.mimetype || ''}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize-payload",
+      "name": "Normalize Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "audio",
+                    "leftValue": "={{$json.messageType}}",
+                    "rightValue": "audio",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "image",
+                    "leftValue": "={{$json.messageType}}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "text",
+                    "leftValue": "={{$json.messageType}}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "switch-type",
+      "name": "Switch Message Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        960,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "mediaBase64",
+        "options": {
+          "mimeType": "={{$json.mediaMimeType || 'audio/ogg'}}"
+        }
+      },
+      "id": "audio-to-file",
+      "name": "Audio To File",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "id": "transcribe-audio",
+      "name": "Transcribe Audio",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        340
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "audio-message",
+              "name": "question",
+              "type": "string",
+              "value": "={{$json.text}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "audio-to-question",
+      "name": "Audio To Question",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1680,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "mediaBase64",
+        "options": {
+          "mimeType": "={{$json.mediaMimeType || 'image/jpeg'}}"
+        }
+      },
+      "id": "image-to-file",
+      "name": "Image To File",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "text": "Describe la imagen y explica su contenido util para poder responder al usuario por WhatsApp.",
+        "inputType": "base64",
+        "options": {}
+      },
+      "id": "analyze-image",
+      "name": "Analyze Image",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        540
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "image-message",
+              "name": "question",
+              "type": "string",
+              "value": "={{$json[0].content[0].text}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "image-to-question",
+      "name": "Image To Question",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1680,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "text-message",
+              "name": "question",
+              "type": "string",
+              "value": "={{$json.messageText}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "text-to-question",
+      "name": "Text To Question",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        740
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "session-final",
+              "name": "sessionId",
+              "type": "string",
+              "value": "={{$('Normalize Payload').item.json.sessionId}}"
+            },
+            {
+              "id": "chat-final",
+              "name": "chatId",
+              "type": "string",
+              "value": "={{$('Normalize Payload').item.json.chatId}}"
+            },
+            {
+              "id": "name-final",
+              "name": "contactName",
+              "type": "string",
+              "value": "={{$('Normalize Payload').item.json.contactName}}"
+            },
+            {
+              "id": "type-final",
+              "name": "messageType",
+              "type": "string",
+              "value": "={{$('Normalize Payload').item.json.messageType}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "finalize-question",
+      "name": "Finalize Question",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1920,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.question}}",
+        "hasOutputParser": false,
+        "needsFallback": false,
+        "options": {
+          "systemMessage": "Eres un asistente de WhatsApp con RAG. Puedes recibir texto directo, transcripciones de audio o descripcion de imagen. Usa siempre la herramienta knowledge_base para responder con datos reales. Responde en espanol mexicano, claro, breve y sin inventar informacion.",
+          "maxIterations": 6,
+          "returnIntermediateSteps": false,
+          "passthroughBinaryImages": true,
+          "enableStreaming": false
+        }
+      },
+      "id": "ai-agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2400,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.4,
+          "maxTokens": 400
+        }
+      },
+      "id": "openai-chat-model",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2160,
+        340
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "openai-embeddings",
+      "name": "OpenAI Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2160,
+        700
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "knowledge_base",
+        "toolDescription": "Base de conocimiento del negocio, horarios, procesos, cursos, soporte y preguntas frecuentes.",
+        "tableName": "rag_openwa_docs",
+        "topK": 4,
+        "includeDocumentMetadata": true,
+        "useReranker": false,
+        "options": {
+          "distanceStrategy": "cosine"
+        }
+      },
+      "id": "knowledge-base",
+      "name": "Knowledge Base",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.2,
+      "position": [
+        2160,
+        860
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "e9umdgmeXA6ZXt3s",
+          "name": "Postgres PGVector Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://openwa_api_proxy:2785/api/sessions/{{$item(0).$node[\"Finalize Question\"].json.sessionId}}/messages/send-text",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={\"X-API-Key\":\"REPLACE_WITH_OPENWA_API_KEY\",\"Content-Type\":\"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"chatId\":\"{{$item(0).$node[\\\"Finalize Question\\\"].json.chatId}}\",\"text\":\"{{$json.output}}\"}",
+        "options": {}
+      },
+      "id": "openwa-send-text",
+      "name": "OpenWA Send Text",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        540
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook OpenWA": {
+      "main": [
+        [
+          {
+            "node": "Ignore Own Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignore Own Message": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Normalize Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Payload": {
+      "main": [
+        [
+          {
+            "node": "Switch Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Message Type": {
+      "main": [
+        [
+          {
+            "node": "Audio To File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Image To File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text To Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio To File": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Audio": {
+      "main": [
+        [
+          {
+            "node": "Audio To Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio To Question": {
+      "main": [
+        [
+          {
+            "node": "Finalize Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image To File": {
+      "main": [
+        [
+          {
+            "node": "Analyze Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Image": {
+      "main": [
+        [
+          {
+            "node": "Image To Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image To Question": {
+      "main": [
+        [
+          {
+            "node": "Finalize Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text To Question": {
+      "main": [
+        [
+          {
+            "node": "Finalize Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Question": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Knowledge Base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Knowledge Base": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "OpenWA Send Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

@@ -1,0 +1,361 @@
+{
+  "name": "OpenWA MEXAT Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## OpenWA MEXAT Agent\n\nWorkflow simple sin RAG.\n\nFlujo:\n1. recibe evento `message.received` desde OpenWA\n2. ignora mensajes propios\n3. normaliza session, chat y texto\n4. usa un AI Agent para responder sobre MEXAT\n5. envia respuesta por OpenWA\n\nPendiente para produccion:\n- asignar credencial OpenAI con saldo\n- registrar webhook en la instancia `alfonso`",
+        "height": 340,
+        "width": 420
+      },
+      "id": "sticky-note",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        220,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "openwa/mexat-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-openwa",
+      "name": "Webhook OpenWA",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        260,
+        320
+      ],
+      "webhookId": "openwa-mexat-agent"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "from-me",
+              "leftValue": "={{$json.body.data.fromMe}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ignore-own",
+      "name": "Ignore Own",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        500,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "session-id",
+              "name": "sessionId",
+              "type": "string",
+              "value": "={{$json.body.sessionId}}"
+            },
+            {
+              "id": "chat-id",
+              "name": "chatId",
+              "type": "string",
+              "value": "={{$json.body.data.chatId || $json.body.data.from}}"
+            },
+            {
+              "id": "contact-name",
+              "name": "contactName",
+              "type": "string",
+              "value": "={{$json.body.data.pushName || 'Usuario'}}"
+            },
+            {
+              "id": "incoming-text",
+              "name": "incomingText",
+              "type": "string",
+              "value": "={{String($json.body.data.body || '').trim()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize-input",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        740,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-text",
+              "leftValue": "={{$json.incomingText}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "has-text",
+      "name": "Has Text",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        980,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.incomingText}}",
+        "options": {
+          "systemMessage": "Eres el asistente oficial de MEXAT, una organizacion mexicana del sector aeroespacial. Responde en espanol mexicano, con tono profesional, claro y breve. Tu funcion es orientar sobre MEXAT, su comunidad, actividades, eventos, afiliacion, colaboracion, programas, objetivos, contactos y contexto institucional. Si no sabes un dato puntual, dilo con honestidad y ofrece una respuesta util sin inventar. No respondas temas fuera del contexto de MEXAT salvo que sea una cortesia basica.",
+          "maxIterations": 4,
+          "returnIntermediateSteps": false,
+          "passthroughBinaryImages": false,
+          "enableStreaming": false
+        }
+      },
+      "id": "ai-agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1220,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list"
+        },
+        "options": {
+          "maxTokens": 350,
+          "temperature": 0.4
+        }
+      },
+      "id": "openai-chat-model",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1220,
+        180
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "ipnKnEDQsD4ANt3i",
+          "name": "OpenAI Clean Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://openwa_api_proxy:2785/api/sessions/{{$item(0).$node[\"Normalize Input\"].json.sessionId}}/messages/send-text",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={\"X-API-Key\":\"REPLACE_WITH_OPENWA_API_KEY\",\"Content-Type\":\"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{JSON.stringify({ chatId: $item(0).$node[\"Normalize Input\"].json.chatId, text: $json.output })}}",
+        "options": {}
+      },
+      "id": "openwa-send-text",
+      "name": "OpenWA Send Text",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1460,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"ok\":true,\"ignored\":true}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-ignore",
+      "name": "Respond Ignore",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        740,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"ok\":true,\"sent\":false,\"reason\":\"message text is empty\"}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-no-text",
+      "name": "Respond No Text",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1220,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"ok\":true,\"sent\":true}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-ok",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1700,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook OpenWA": {
+      "main": [
+        [
+          {
+            "node": "Ignore Own",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignore Own": {
+      "main": [
+        [
+          {
+            "node": "Respond Ignore",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Has Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Text": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond No Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "OpenWA Send Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenWA Send Text": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
